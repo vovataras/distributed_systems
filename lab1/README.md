@@ -5,7 +5,7 @@
 
 ## What to do:
 
-* Open this folder in console or terminal;
-* Run the program using the command:
+1. Open this folder in console or terminal;
+2. Run the program using the command:
 
       python main.py
