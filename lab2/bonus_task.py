@@ -13,12 +13,12 @@ def select_command(usr_command):
         subprocess.run(usr_command)
  
     # In process
-    # def echo():
-    #     if (args == 0):
-    #         print('You need to write something to echo!')
-    #     else:
-    #         # subprocess.run(usr_command)
-    #         subprocess.run(usr_command, shell=True)
+    def echo():
+        # print('here')
+        # if (args == 0):
+        #     print('You need to write something to echo!')
+        # else:
+        subprocess.run(['echo', ' '.join(args)], shell=True)
  
     # Done
     def login():
@@ -64,7 +64,7 @@ def select_command(usr_command):
 
     switcher = {
             "ping": ping,
-            # "echo": echo,
+            "echo": echo,
             "login": login,
             "list": f_list,
             "msg": msg,
