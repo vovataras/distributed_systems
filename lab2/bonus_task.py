@@ -8,18 +8,15 @@ def select_command(usr_command):
     command = usr_command[0]
     args = usr_command[1:]
 
-    # Done
     def ping():
         subprocess.run(usr_command)
  
-    # Done
     def echo():
         if (platform.system() == 'Windows'):
             subprocess.run(['echo', ' '.join(args)], shell=True)
         else:
             subprocess.run(usr_command)
  
-    # Done
     def login():
         if (len(args) == 2):
             print(f'You are successfully logged in as "{args[0]}"')
@@ -29,7 +26,6 @@ def select_command(usr_command):
         else:
             print('You need to enter login and password!')
  
-    # Done
     def f_list():
         if (len(usr_command) > 1):
             print('Something went wrong')
@@ -40,7 +36,6 @@ def select_command(usr_command):
             else:
                 subprocess.run(["ls", "-la"])
 
-    # In process
     def msg():
         if (len(args) >= 2):
             msg = ' '.join(args[1:])
@@ -50,7 +45,6 @@ def select_command(usr_command):
         else:
             print('You need to enter destination user and message!')
 
-    # Done
     def f_file():
         if (len(args) > 1 and len(args) < 3):
             print(f'You have successfully sent the file "{args[1]}" to "{args[0]}"')
@@ -61,7 +55,6 @@ def select_command(usr_command):
         else:
             print('You can send only one file!')
 
-    # In process
     def f_help():
         print("  ping  - test the ability of the source computer to reach a specified destination device;")
         print("  echo  - display line of text/string that are passed as an argument;")
