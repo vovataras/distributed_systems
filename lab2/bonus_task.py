@@ -12,13 +12,12 @@ def select_command(usr_command):
     def ping():
         subprocess.run(usr_command)
  
-    # In process
+    # Done
     def echo():
-        # print('here')
-        # if (args == 0):
-        #     print('You need to write something to echo!')
-        # else:
-        subprocess.run(['echo', ' '.join(args)], shell=True)
+        if (platform.system() == 'Windows'):
+            subprocess.run(['echo', ' '.join(args)], shell=True)
+        else:
+            subprocess.run(usr_command)
  
     # Done
     def login():
@@ -62,13 +61,24 @@ def select_command(usr_command):
         else:
             print('You can send only one file!')
 
+    # In process
+    def f_help():
+        print("  ping  - test the ability of the source computer to reach a specified destination device;")
+        print("  echo  - display line of text/string that are passed as an argument;")
+        print("  login - establish a new session with the system (the command is fake);")
+        print("  list  - list all files and subdirectories contained in directory;")
+        print("  msg   - send a message to a specific user (the command is fake);")
+        print("  file  - send a file to a specific user (the command is fake);")
+        print("  exit  - close the command interpreter.")
+
     switcher = {
             "ping": ping,
             "echo": echo,
             "login": login,
             "list": f_list,
             "msg": msg,
-            "file": f_file
+            "file": f_file,
+            "help": f_help
         }
  
     # Get the function from switcher dictionary
@@ -77,6 +87,7 @@ def select_command(usr_command):
     return func()
 
 
+print('Use the "help" command to get help.')
 while(True):
     user_input = input('[user@pc ]$ ' )
     if(len(user_input) == 0):
