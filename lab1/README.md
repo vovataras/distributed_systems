@@ -8,4 +8,4 @@
 1. Open this folder in console or terminal;
 2. Run the program using the command:
 
-      python main.py
+       python main.py
