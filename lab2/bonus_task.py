@@ -8,12 +8,19 @@ def select_command(usr_command):
     command = usr_command[0]
     args = usr_command[1:]
 
+    # Done
     def ping():
         subprocess.run(usr_command)
  
-    def echo():
-        subprocess.run(usr_command)
+    # In process
+    # def echo():
+    #     if (args == 0):
+    #         print('You need to write something to echo!')
+    #     else:
+    #         # subprocess.run(usr_command)
+    #         subprocess.run(usr_command, shell=True)
  
+    # Done
     def login():
         if (len(args) == 2):
             print(f'You are successfully logged in as "{args[0]}"')
@@ -23,16 +30,18 @@ def select_command(usr_command):
         else:
             print('You need to enter login and password!')
  
+    # Done
     def f_list():
         if (len(usr_command) > 1):
             print('Something went wrong')
         else:
             # Check the OS
             if (platform.system() == 'Windows'):
-                subprocess.run(["DIR", "/A:H"])
+                subprocess.run("dir", shell=True)
             else:
                 subprocess.run(["ls", "-la"])
 
+    # In process
     def msg():
         if (len(args) >= 2):
             msg = ' '.join(args[1:])
@@ -42,6 +51,7 @@ def select_command(usr_command):
         else:
             print('You need to enter destination user and message!')
 
+    # Done
     def f_file():
         if (len(args) > 1 and len(args) < 3):
             print(f'You have successfully sent the file "{args[1]}" to "{args[0]}"')
@@ -54,7 +64,7 @@ def select_command(usr_command):
 
     switcher = {
             "ping": ping,
-            "echo": echo,
+            # "echo": echo,
             "login": login,
             "list": f_list,
             "msg": msg,
