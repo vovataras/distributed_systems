@@ -52,12 +52,10 @@ public class ConnectionHandler implements Closeable{
 
     public void run() {
         try {
-//            DataInputStream readStream = new DataInputStream(this.socket.getInputStream());
-//            DataOutputStream outputStream = new DataOutputStream(this.socket.getOutputStream());
             MyThread myThread = null;
 
             while (!this.isClosing) {
-                byte[] request = null;
+                byte[] request;
 
                 String[] userCommand = userInput.getUserCommand();
 
@@ -65,54 +63,44 @@ public class ConnectionHandler implements Closeable{
                     continue;
                 }
 
-                if (userCommand[0].getBytes()[0] == (byte)127) {
+                // If user enter "exit"
+                if (userCommand[0].getBytes()[0] == (byte)Const.CMD_EXIT) {
                     close();
                     if (myThread != null)
                         myThread.interrupt();
                     break;
                 }
 
+                // Get the current command for decoding server response in the future
                 currentCommand = userCommand[0].getBytes()[0];
 
-
+                // Get encoded data for sending
                 request = commandManager.execute(userCommand);
                 if (request.length == 0)
                     continue;
 
+                // Sending Request to the server.
                 commandManager.sendRequest(request, this.outputStream);
 
-
-
-//                if (request == null) {
-//                    System.out.println("ERROR: Unable to send request to the server.");
-//                }
-//
-//                // Sending Request to the server.
-//                outputStream.writeInt(request.length);
-//                outputStream.write(request);
-
-                // wait for the server to read the socket messages and reply
-                for (int i = 0; i< 3; i++)
+                // Wait for the server to read the socket messages and reply
+                for (int i = 0; i< 3; i++) {
                     System.out.print(".");
-                Thread.sleep(333);
+                    Thread.sleep(333);
+                }
                 System.out.println();
-//                Thread.sleep(1000);
 
-                // TODO: rewrite comments
-//                // read the size of reply and response message itself
-//                int contentSize = readStream.readInt();
-////                System.out.println(contentSize);
-//                byte[] response = new byte[contentSize];
-//                readStream.readFully(response);
-////                System.out.println(response);
+                // Get a response from the server using the method
                 byte[] response = commandManager.receiveResponse(this.readStream);
 
-                // TODO: explain
+                // Run a new thread to retrieve messages and files,
+                // and check which users are logged in to the server.
+                // Perform these actions only when the user logs in to the server.
                 if (response[0] == (byte)6 || response[0] == (byte)7) {
                     myThread = new MyThread(this.commandManager, this.socket);
                     myThread.start();
                 }
-                // and decode it
+
+                // decode the response
                 this.commandManager.decode(this.currentCommand, response);
             }
         }
@@ -128,9 +116,9 @@ class MyThread extends Thread {
 
     private CommandManager commandManager;
 
-    private byte[] recieveMsgRequest;
-    private byte[] recieveFileRequest;
-    private byte[] recieveListRequest;
+    private byte[] receiveMsgRequest;
+    private byte[] receiveFileRequest;
+    private byte[] receiveListRequest;
     Socket socket;
 
     DataInputStream readStream;
@@ -152,9 +140,9 @@ class MyThread extends Thread {
             this.outputStream = new DataOutputStream(socket.getOutputStream());
 
             if (!isEncoded) {
-                recieveMsgRequest = new byte[] {25};
-                recieveFileRequest = new byte[] {30};
-                recieveListRequest = new byte[] {10};
+                receiveMsgRequest = new byte[] {25};
+                receiveFileRequest = new byte[] {30};
+                receiveListRequest = new byte[] {10};
 
                 isEncoded = true;
             }
@@ -162,8 +150,8 @@ class MyThread extends Thread {
             while (!socket.isClosed()){
                 try {
                     checkUsers();
-                    runCommand(recieveMsgRequest);
-                    runCommand(recieveFileRequest);
+                    runCommand(receiveMsgRequest);
+                    runCommand(receiveFileRequest);
 
                 }catch (InterruptedException e) {
                 }
@@ -188,7 +176,7 @@ class MyThread extends Thread {
 
     private void checkUsers() throws IOException, InterruptedException {
         Thread.sleep(1000);
-        commandManager.sendRequest(recieveListRequest, this.outputStream);
+        commandManager.sendRequest(receiveListRequest, this.outputStream);
         Thread.sleep(500);
 
         // TODO: write comments

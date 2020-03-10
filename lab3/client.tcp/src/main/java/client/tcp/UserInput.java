@@ -21,13 +21,8 @@ public class UserInput implements Const{
         
         while(isEmptyCommand) {
             isEmptyCommand = false;
-            System.out.print(">>> ");
+//            System.out.print(">>> ");
             userCommand = reader.readLine();
-
-            if (userCommand.length() == 0){
-                System.out.println("Please enter command!");
-                isEmptyCommand = true;
-            }
     
             command = userCommand.split(" ");
     
@@ -64,8 +59,12 @@ public class UserInput implements Const{
                     help();
                     break;
                 default:
-                    // if not found command, repeat again
-                    System.out.println("not found this command");
+                    if (userCommand.length() == 0){
+                        System.out.println("Please enter command!\n");
+                    } else {
+                        // if not found command, repeat again
+                        System.out.println("Not found this command...\n");
+                    }
                     isEmptyCommand = true;
                     break;
             }
@@ -73,7 +72,6 @@ public class UserInput implements Const{
 
         return command;
     }
-
 
     private void help(){
         System.out.println("  ping  - test the ability of the source computer to reach a server;");

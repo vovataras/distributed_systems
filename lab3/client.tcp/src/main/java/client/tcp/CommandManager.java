@@ -257,33 +257,35 @@ public class CommandManager implements Const{
 
         return result;
     }
+    // TODO: END
+
+
 
 
 
     private void handlePing(byte[] message) {
         if (message[0] == CMD_PING_RESPONSE)
-            System.out.println("ping success!");
+            System.out.println("ping success!\n");
         else
-            System.out.println("ERROR: ping");
+            System.out.println("ERROR ping: Failed to test connection.\n");
     }
 
     private void handleEcho(byte[] message) {
         try {
             String response = new String(message, CHARSET);
-
-            System.out.println(response);
+            System.out.println(response + "\n");
         } catch (Exception ex) {
-            System.out.println("ERROR: echo");
+            System.out.println("ERROR echo: Failed to get response.\n");
         }
     }
 
     private void handleLogin(byte[] message) {
         if (Arrays.equals(message, CMD_LOGIN_OK_NEW))
-            System.out.println("Registration ok");
+            System.out.println("Registration ok.");
         else if (Arrays.equals(message, CMD_LOGIN_OK))
-            System.out.println("Login ok");
+            System.out.println("Login ok.");
         else
-            System.out.println("ERROR: login");
+            checkError(message[0]);
     }
 
     private void handleList(byte[] message) {
@@ -301,7 +303,7 @@ public class CommandManager implements Const{
                 e.printStackTrace();
             }
         } else {
-            System.out.println("ERROR: list");
+            checkError(message[0]);
         }
     }
 
@@ -309,9 +311,12 @@ public class CommandManager implements Const{
         if (Arrays.equals(message, CMD_MSG_SENT))
             System.out.println("Message successfully sent.\n");
         else
-            System.out.println("ERROR: msg");
+            checkError(message[0]);
     }
 
+
+
+    // TODO: START
     private void handleFile(byte[] message) {
         if (Arrays.equals(message, CMD_FILE_SENT))
             System.out.println("File successfully sent.");
