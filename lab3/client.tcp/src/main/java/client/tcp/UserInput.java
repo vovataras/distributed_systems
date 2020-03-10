@@ -14,6 +14,7 @@ public class UserInput implements Const{
     }
 
     String[] getUserCommand() throws IOException {
+        // TODO: return object instead of string
         String userCommand = "";
         String[] command =  new String[0];
         boolean isEmptyCommand = true;

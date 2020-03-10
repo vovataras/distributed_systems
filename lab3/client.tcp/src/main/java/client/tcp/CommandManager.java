@@ -19,7 +19,7 @@ public class CommandManager implements Const{
 
     private static final byte[] INCORRECT_CONTENT_SIZE = new byte[] { 111 }; // 101
 
-    private byte currentCommand;
+//    private byte currentCommand;
 
 
 //    int size;
@@ -39,13 +39,38 @@ public class CommandManager implements Const{
         return contentSize > 0 && contentSize < MAX_CONTENT_SIZE;
     }
 
-    public byte[] execute(String[] command) {
+    public synchronized void sendRequest(byte[] request, DataOutputStream outputStream) throws IOException {
+        if (request == null) {
+            System.out.println("ERROR: Unable to send request to the server.");
+        }
+
+        // Sending Request to the server.
+        outputStream.writeInt(request.length);
+        outputStream.write(request);
+    }
+
+    public synchronized byte[] receiveResponse(DataInputStream readStream) throws IOException {
+        // read the size of reply and response message itself
+        int contentSize = readStream.readInt();
+//                System.out.println(contentSize);
+        byte[] response = new byte[contentSize];
+        readStream.readFully(response);
+//                System.out.println(response);
+
+        return response;
+    }
+
+
+
+
+    public synchronized byte[] execute(String[] command) {
 //        String[] command = cmd.split(" ");
 
         if (command.length == 0)
             return incorrectCommand();
 
-        currentCommand = command[0].getBytes()[0];
+        byte currentCommand = command[0].getBytes()[0];
+
         try {
             switch (currentCommand) {
                 case CMD_PING:
@@ -73,15 +98,11 @@ public class CommandManager implements Const{
         }
     }
 
-    public void decode(byte[] message){
-        if (message.length == 0)
+    public synchronized void decode(byte currentCommand, byte[] message){
+        if (message.length == 0) {
             incorrectCommand();
-
-//        for debug
-//        for (byte e: message
-//             ) {
-//            System.out.println(e);
-//        }
+            return;
+        }
 
         switch (currentCommand) {
             case CMD_PING:
@@ -131,7 +152,6 @@ public class CommandManager implements Const{
         byte[] result = new byte[joined.length() + 1];
 
         // copy bytes to new array (from, fromIndex, to, toIndex, count)
-        // System.arraycopy(CMD_ECHO, 0, result, 0, 1);
         result[0] = CMD_ECHO;
         System.arraycopy(joined.getBytes(), 0, result, 1, joined.getBytes().length);
 
@@ -153,10 +173,13 @@ public class CommandManager implements Const{
     }
 
     private byte[] formMsgQuery(String[] command) throws IOException{
-        if (command.length > 3)
+        if (command.length < 3)
             return CMD_ERROR;
 
-        String[] cmd = Arrays.copyOfRange(command, 1, command.length);
+        String[] cmd = new String[2];
+        cmd[0] = command[1];
+        cmd[1] = String.join(" ", Arrays.copyOfRange(command, 2, command.length));
+
         byte[] b = serialize(cmd);
         byte[] result = new byte[b.length + 1];
 
@@ -170,15 +193,20 @@ public class CommandManager implements Const{
         if (command.length > 4)
             return CMD_ERROR;
 
+        // TODO: check the file size
+
         Object[] obj = new Object[3];
         obj[0] = command[1];
         obj[1] = command[2];
 
-        File file = new File("1.txt");
+        File file = new File(command[3]);
+        System.out.println(file.isFile());
 
         try {
+            System.out.println("Success!");
             byte[] b = getBytesFromFile(file);
             obj[2] = b;
+
         } catch (IOException e) {
             return CMD_ERROR;
         }
@@ -212,49 +240,106 @@ public class CommandManager implements Const{
     }
 
     private void handleLogin(byte[] message) {
-        System.out.println("login");
+        if (Arrays.equals(message, CMD_LOGIN_OK_NEW))
+            System.out.println("Registration ok");
+        else if (Arrays.equals(message, CMD_LOGIN_OK))
+            System.out.println("Login ok");
+        else
+            System.out.println("ERROR: login");
     }
 
     private void handleList(byte[] message) {
-        System.out.println("list");
+        if (message.length > 1){
+            try {
+                String[] users = deserialize(message, String[].class);
+                System.out.println("Number of users on the server: " + users.length + ".");
+                if (users.length > 0){
+                    System.out.println("Users:");
+                    for (String user: users) {
+                        System.out.println("  "+ user);
+                    }
+                }
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("ERROR: list");
+        }
     }
 
     private void handleMsg(byte[] message) {
-        System.out.println("msg");
+        if (Arrays.equals(message, CMD_MSG_SENT))
+            System.out.println("Message successfully sent.\n");
+        else
+            System.out.println("ERROR: msg");
     }
 
     private void handleFile(byte[] message) {
-        System.out.println("file");
+        if (Arrays.equals(message, CMD_FILE_SENT))
+            System.out.println("File successfully sent.");
+        else {
+            System.out.println("ERROR: file");
+            System.out.println(message[0]);
+        }
     }
 
     private void handleReceiveMessage(byte[] message) {
-        System.out.println("receive message");
+        if(message.length == 1){
+            if (!Arrays.equals(message, CMD_RECEIVE_MSG_EMPTY)) {
+//                System.out.println("No messages.");
+                System.out.println("ERROR: receive msg");
+                System.out.println(message[0]);
+            }
+//            else{
+//            }
+
+        } else {
+            try {
+                String[] msg = deserialize(message, String[].class);
+                System.out.println("\nYou have new message!");
+                System.out.println("Login of user: " + msg[0]);
+                System.out.println("Message: " + msg[1]);
+                System.out.println();
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void handleReceiveFile(byte[] message) {
-        System.out.println("receive file");
+        if(message.length == 1){
+            if (!Arrays.equals(message, CMD_RECEIVE_FILE_EMPTY))
+                System.out.println("ERROR: receive file");
+
+        } else {
+            try {
+                Object[] msg = deserialize(message, Object[].class);
+                System.out.println("You have new file!");
+                System.out.println("Login of user: " + (String)msg[0]);
+                System.out.println("Filename: " + (String)msg[1]);
+
+                File file = new File("./receivedFiles/"+(String) msg[1]);
+
+                writeByte((byte[])msg[2], file);
+
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    public String[] getActiveUsers(byte[] response) {
+        if (response.length > 1){
+            try {
+                String[] users = deserialize(response, String[].class);
+                return users;
+            } catch (ClassNotFoundException | IOException e) {
+                e.printStackTrace();
+            }
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return new String[0];
+    }
 
 
 
@@ -313,6 +398,31 @@ public class CommandManager implements Const{
         if (offset < bytes.length) {
             throw new IOException("Could not completely read file "+file.getName());
         }
+        System.out.println("File encoded!!!");
         return bytes;
+    }
+
+
+
+    // https://www.geeksforgeeks.org/convert-byte-array-to-file-using-java/
+    // Method which write the bytes into a file
+    static void writeByte(byte[] bytes, File file)
+    {
+        try {
+            // Initialize a pointer
+            // in file using OutputStream
+            OutputStream os = new FileOutputStream(file);
+
+            // Starts writing the bytes in it
+            os.write(bytes);
+            System.out.println("Successfully file received.");
+
+            // Close the file
+            os.close();
+        }
+
+        catch (Exception e) {
+            System.out.println("Exception: " + e);
+        }
     }
 }
