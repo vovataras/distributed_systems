@@ -20,6 +20,13 @@ public interface Const {
     static final byte[] CMD_RECEIVE_FILE_EMPTY = new byte[] { 31 };
 
     // Errors
-    static final byte[] INCORRECT_COMMAND = new byte[] { 103 };
+    static final byte SERVER_ERROR = 100;
+    static final byte INCORRECT_CONTENT_SIZE = 101;
+    static final byte SERIALIZATION_ERROR =  102;
+    static final byte INCORRECT_COMMAND =  103;
+    static final byte WRONG_PARAMS = 104;
 
+    static final byte LOGIN_WRONG_PASSWORD = 110;
+    static final byte LOGIN_FIRST = 112;
+    static final byte FAILED_SENDING = 113;
 }

@@ -76,6 +76,9 @@ public class ConnectionHandler implements Closeable{
 
 
                 request = commandManager.execute(userCommand);
+                if (request.length == 0)
+                    continue;
+
                 commandManager.sendRequest(request, this.outputStream);
 
 

@@ -13,11 +13,11 @@ public class CommandManager implements Const{
 
     private static final Charset CHARSET = Charset.forName("UTF-8");
 
-    private static final byte[] SERIALIZATION_ERROR = new byte[] {100};
-    private static final byte[] CMD_ERROR = new byte[] {101};
-    private static final byte[] INCORRECT_COMMAND = new byte[] {102};
-
-    private static final byte[] INCORRECT_CONTENT_SIZE = new byte[] { 111 }; // 101
+//    private static final byte[] SERIALIZATION_ERROR = new byte[] {100};
+//    private static final byte[] CMD_ERROR = new byte[] {101};
+//    private static final byte[] INCORRECT_COMMAND = new byte[] {102};
+//
+//    private static final byte[] INCORRECT_CONTENT_SIZE = new byte[] { 111 }; // 101
 
 //    private byte currentCommand;
 
@@ -62,6 +62,38 @@ public class CommandManager implements Const{
 
 
 
+    private void checkError(byte error) {
+
+        switch (error) {
+            case SERVER_ERROR:
+                System.out.println("Server error");
+                break;
+            case INCORRECT_CONTENT_SIZE:
+                System.out.println("Incorrect content size");
+                break;
+            case SERIALIZATION_ERROR:
+                System.out.println("Serialization error");
+                break;
+            case INCORRECT_COMMAND:
+                System.out.println("Incorrect command");
+                break;
+            case WRONG_PARAMS:
+                System.out.println("Wrong params");
+                break;
+            case LOGIN_WRONG_PASSWORD:
+                System.out.println("Login wrong password");
+                break;
+            case LOGIN_FIRST:
+                System.out.println("Login first");
+                break;
+            case FAILED_SENDING:
+                System.out.println("Failed sending");
+                break;
+
+            default:
+                System.out.println("Unexpected error");
+        }
+    }
 
     public synchronized byte[] execute(String[] command) {
 //        String[] command = cmd.split(" ");
@@ -94,7 +126,7 @@ public class CommandManager implements Const{
                     return incorrectCommand();
             }
         } catch (Exception ex) {
-            return SERIALIZATION_ERROR;
+            return new byte[] {SERIALIZATION_ERROR};
         }
     }
 
@@ -137,12 +169,12 @@ public class CommandManager implements Const{
 
 
     private byte[] incorrectCommand() {
-        return INCORRECT_COMMAND;
+        return new byte[] {INCORRECT_COMMAND};
     }
 
 
     public byte[] incorrectContentSize() {
-        return INCORRECT_CONTENT_SIZE;
+        return new byte[] {INCORRECT_CONTENT_SIZE};
     }
 
 
@@ -159,8 +191,10 @@ public class CommandManager implements Const{
     }
 
     private byte[] formLoginQuery(String[] command) throws IOException{
-        if (command.length > 3)
-            return CMD_ERROR;
+        if (command.length > 3) {
+            checkError(WRONG_PARAMS);
+            return new byte[0];
+        }
 
         String[] cmd = Arrays.copyOfRange(command, 1, command.length);
         byte[] b = serialize(cmd);
@@ -173,8 +207,10 @@ public class CommandManager implements Const{
     }
 
     private byte[] formMsgQuery(String[] command) throws IOException{
-        if (command.length < 3)
-            return CMD_ERROR;
+        if (command.length < 3){
+            checkError(WRONG_PARAMS);
+            return new byte[0];
+        }
 
         String[] cmd = new String[2];
         cmd[0] = command[1];
@@ -190,8 +226,10 @@ public class CommandManager implements Const{
     }
 
     private byte[] formFileQuery(String[] command) throws IOException{
-        if (command.length > 4)
-            return CMD_ERROR;
+        if (command.length > 4) {
+            checkError(WRONG_PARAMS);
+            return new byte[0];
+        }
 
         // TODO: check the file size
 
@@ -208,7 +246,7 @@ public class CommandManager implements Const{
             obj[2] = b;
 
         } catch (IOException e) {
-            return CMD_ERROR;
+            return new byte[] {WRONG_PARAMS};
         }
 
         byte[] tempByte = serialize(obj);
