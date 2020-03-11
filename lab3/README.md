@@ -21,31 +21,31 @@
 
 ## Commands format:
 
-### `ping`
+#### `ping`
 Testing connection (no parameters).
 
-### `echo`
+#### `echo`
 Testing sending message. Enter the command and message for echo:
 
     echo message for testing
 
-### `login`
+#### `login`
 Log in on server or create new user. Has 2 parameters (login, password):
 
     login user_login user_password
 
-### `list`
+#### `list`
 Displays active users (no parameters).
 
-### `msg`
+#### `msg`
 Send message to user. Has 2 parameters (recipient login, message(string)):
 
     msg to_user text message for another user
 
-### `file`
+#### `file`
 Send file to user. Has 3 parameters (recipient login, name of file, path to file):
 
     file to_user filename /path/to/file
 
-### `exit`
+#### `exit`
 Shutdown the client (no parameters);
