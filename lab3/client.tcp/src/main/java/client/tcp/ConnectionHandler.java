@@ -208,8 +208,7 @@ class MyThread extends Thread {
                 oldUsers = (ArrayList<String>) currUsers.clone();
                 currUsers.clear();
             }
-
+            System.out.println();
         }
     }
-
 }

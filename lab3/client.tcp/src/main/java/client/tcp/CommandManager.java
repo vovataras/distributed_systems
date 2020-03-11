@@ -3,6 +3,7 @@ package client.tcp;
 import java.io.*;
 import java.lang.*;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 
@@ -11,16 +12,7 @@ public class CommandManager implements Const{
     // little bit more than 10MB
     private static final int MAX_CONTENT_SIZE = 10_500_000;
 
-    private static final Charset CHARSET = Charset.forName("UTF-8");
-
-//    private static final byte[] SERIALIZATION_ERROR = new byte[] {100};
-//    private static final byte[] CMD_ERROR = new byte[] {101};
-//    private static final byte[] INCORRECT_COMMAND = new byte[] {102};
-//
-//    private static final byte[] INCORRECT_CONTENT_SIZE = new byte[] { 111 }; // 101
-
-//    private byte currentCommand;
-
+    private static final Charset CHARSET = StandardCharsets.UTF_8;
 
 //    int size;
 //    byte type;
@@ -42,20 +34,18 @@ public class CommandManager implements Const{
     public synchronized void sendRequest(byte[] request, DataOutputStream outputStream) throws IOException {
         if (request == null) {
             System.out.println("ERROR: Unable to send request to the server.");
+        } else {
+            // Sending Request to the server.
+            outputStream.writeInt(request.length);
+            outputStream.write(request);
         }
-
-        // Sending Request to the server.
-        outputStream.writeInt(request.length);
-        outputStream.write(request);
     }
 
     public synchronized byte[] receiveResponse(DataInputStream readStream) throws IOException {
         // read the size of reply and response message itself
         int contentSize = readStream.readInt();
-//                System.out.println(contentSize);
         byte[] response = new byte[contentSize];
         readStream.readFully(response);
-//                System.out.println(response);
 
         return response;
     }
@@ -66,40 +56,47 @@ public class CommandManager implements Const{
 
         switch (error) {
             case SERVER_ERROR:
-                System.out.println("Server error");
+                System.out.println("100 SERVER ERROR: Internal Server Error occurred. " +
+                        "That means that it’s not your fault (or you just sent something " +
+                        "THAT bad that server was not expecting).\n");
                 break;
             case INCORRECT_CONTENT_SIZE:
-                System.out.println("Incorrect content size");
+                System.out.println("101 INCORRECT CONTENT SIZE: " +
+                        "The transfer size is below 0 or above 10MB.\n");
                 break;
             case SERIALIZATION_ERROR:
-                System.out.println("Serialization error");
+                System.out.println("102 SERIALIZATION ERROR: Server failed to deserialize content.\n");
                 break;
             case INCORRECT_COMMAND:
-                System.out.println("Incorrect command");
+                System.out.println("103 INCORRECT COMMAND: Server did not understand the command.\n");
                 break;
             case WRONG_PARAMS:
-                System.out.println("Wrong params");
+                System.out.println("104 WRONG PARAMS: Incorrect number or content of parameters. " +
+                        "Server expected something different.\n");
                 break;
             case LOGIN_WRONG_PASSWORD:
-                System.out.println("Login wrong password");
+                System.out.println("110 LOGIN WRONG PASSWORD: The specified password is incorrect " +
+                        "(this login was used before with another password).\n");
                 break;
             case LOGIN_FIRST:
-                System.out.println("Login first");
+                System.out.println("112 LOGIN FIRST: This command requires login first.\n");
                 break;
             case FAILED_SENDING:
-                System.out.println("Failed sending");
+                System.out.println("113 FAILED SENDING: Failed to send the message or file. " +
+                        "Either receiver does not exist or his pending message quota exceeded.\n");
                 break;
 
             default:
-                System.out.println("Unexpected error");
+                System.out.println("Unexpected error...\n");
         }
     }
 
     public synchronized byte[] execute(String[] command) {
-//        String[] command = cmd.split(" ");
 
-        if (command.length == 0)
-            return incorrectCommand();
+        if (command.length == 0){
+            checkError(INCORRECT_COMMAND);
+            return new byte[0];
+        }
 
         byte currentCommand = command[0].getBytes()[0];
 
@@ -123,7 +120,7 @@ public class CommandManager implements Const{
                     return new byte[] {CMD_RECEIVE_FILE};
 
                 default:
-                    return incorrectCommand();
+                    return new byte[] {INCORRECT_COMMAND};
             }
         } catch (Exception ex) {
             return new byte[] {SERIALIZATION_ERROR};
@@ -168,16 +165,17 @@ public class CommandManager implements Const{
     }
 
 
-    private byte[] incorrectCommand() {
-        return new byte[] {INCORRECT_COMMAND};
+
+    private void incorrectCommand() {
+        checkError(INCORRECT_COMMAND);
+    }
+
+    public void incorrectContentSize() {
+        checkError(INCORRECT_CONTENT_SIZE);
     }
 
 
-    public byte[] incorrectContentSize() {
-        return new byte[] {INCORRECT_CONTENT_SIZE};
-    }
-
-
+    // TODO: review START
     private byte[] formEchoQuery(String[] command) {
         String[] cmd = Arrays.copyOfRange(command, 1, command.length);
         String joined = String.join(" ", cmd);
@@ -231,8 +229,6 @@ public class CommandManager implements Const{
             return new byte[0];
         }
 
-        // TODO: check the file size
-
         Object[] obj = new Object[3];
         obj[0] = command[1];
         obj[1] = command[2];
@@ -240,9 +236,14 @@ public class CommandManager implements Const{
         File file = new File(command[3]);
         System.out.println(file.isFile());
 
+        // TODO: check the file size
         try {
-            System.out.println("Success!");
+//            System.out.println("Success!");
             byte[] b = getBytesFromFile(file);
+            if (!isContentSizeOk(b.length)){
+                incorrectContentSize();
+                return new byte[0];
+            }
             obj[2] = b;
 
         } catch (IOException e) {
@@ -257,7 +258,7 @@ public class CommandManager implements Const{
 
         return result;
     }
-    // TODO: END
+    // TODO: review END
 
 
 
@@ -281,9 +282,9 @@ public class CommandManager implements Const{
 
     private void handleLogin(byte[] message) {
         if (Arrays.equals(message, CMD_LOGIN_OK_NEW))
-            System.out.println("Registration ok.");
+            System.out.println("Registration ok.\n");
         else if (Arrays.equals(message, CMD_LOGIN_OK))
-            System.out.println("Login ok.");
+            System.out.println("Login ok.\n");
         else
             checkError(message[0]);
     }
@@ -298,6 +299,7 @@ public class CommandManager implements Const{
                     for (String user: users) {
                         System.out.println("  "+ user);
                     }
+                    System.out.println();
                 }
             } catch (ClassNotFoundException | IOException e) {
                 e.printStackTrace();
@@ -314,28 +316,25 @@ public class CommandManager implements Const{
             checkError(message[0]);
     }
 
-
-
-    // TODO: START
     private void handleFile(byte[] message) {
         if (Arrays.equals(message, CMD_FILE_SENT))
-            System.out.println("File successfully sent.");
+            System.out.println("File successfully sent.\n");
         else {
-            System.out.println("ERROR: file");
-            System.out.println(message[0]);
+            checkError(message[0]);
         }
     }
 
+
+
+    // TODO: review START
     private void handleReceiveMessage(byte[] message) {
         if(message.length == 1){
             if (!Arrays.equals(message, CMD_RECEIVE_MSG_EMPTY)) {
-//                System.out.println("No messages.");
-                System.out.println("ERROR: receive msg");
-                System.out.println(message[0]);
+                checkError(message[0]);
             }
-//            else{
+//            else {
+//                System.out.println("No messages.");
 //            }
-
         } else {
             try {
                 String[] msg = deserialize(message, String[].class);
@@ -358,10 +357,10 @@ public class CommandManager implements Const{
             try {
                 Object[] msg = deserialize(message, Object[].class);
                 System.out.println("You have new file!");
-                System.out.println("Login of user: " + (String)msg[0]);
-                System.out.println("Filename: " + (String)msg[1]);
+                System.out.println("Login of user: " + msg[0]);
+                System.out.println("Filename: " + msg[1] + "\n");
 
-                File file = new File("./receivedFiles/"+(String) msg[1]);
+                File file = new File("./receivedFiles/"+ msg[1]);
 
                 writeByte((byte[])msg[2], file);
 
@@ -371,11 +370,12 @@ public class CommandManager implements Const{
         }
     }
 
+
+
     public String[] getActiveUsers(byte[] response) {
         if (response.length > 1){
             try {
-                String[] users = deserialize(response, String[].class);
-                return users;
+                return deserialize(response, String[].class);
             } catch (ClassNotFoundException | IOException e) {
                 e.printStackTrace();
             }
@@ -383,6 +383,8 @@ public class CommandManager implements Const{
 
         return new String[0];
     }
+    // TODO: review END
+
 
 
 
@@ -405,9 +407,11 @@ public class CommandManager implements Const{
 
 
 
+
+
     // https://stackoverflow.com/questions/858980/file-to-byte-in-java
     // Returns the contents of the file in a byte array.
-    public byte[] getBytesFromFile(File file) throws IOException {
+    private byte[] getBytesFromFile(File file) throws IOException {
         // Get the size of the file
         long length = file.length();
 
@@ -425,7 +429,7 @@ public class CommandManager implements Const{
 
         // Read in the bytes
         int offset = 0;
-        int numRead = 0;
+        int numRead;
 
         InputStream is = new FileInputStream(file);
         try {
@@ -441,7 +445,7 @@ public class CommandManager implements Const{
         if (offset < bytes.length) {
             throw new IOException("Could not completely read file "+file.getName());
         }
-        System.out.println("File encoded!!!");
+//        System.out.println("File encoded!!!");
         return bytes;
     }
 
@@ -449,7 +453,7 @@ public class CommandManager implements Const{
 
     // https://www.geeksforgeeks.org/convert-byte-array-to-file-using-java/
     // Method which write the bytes into a file
-    static void writeByte(byte[] bytes, File file)
+    private void writeByte(byte[] bytes, File file)
     {
         try {
             // Initialize a pointer

@@ -10,11 +10,11 @@
 
 		mvn clean compile exec:java -D exec.args="0.0.0.0 4321"
 
-   * arguments can be yours, and you can omit them (the server will run with these settings is the default).
+   * arguments(args) can be yours, and you can omit them (the server will run with these settings is the default).
    
 3. Open client folder in console or terminal;
 4. Run client as following:
 
 		mvn clean compile exec:java -D exec.args="0.0.0.0 4321"
 
-   * args may be yours, but according to which the server is running, and you can omit them (the server will run with `args="0.0.0.0 4321"`).
+   * arguments may be yours, but according to which the server is running, and you can omit them (the client will run with `args="0.0.0.0 4321"`).

@@ -80,6 +80,6 @@ public class UserInput implements Const{
         System.out.println("  list  - list all users on the server;");
         System.out.println("  msg   - send a message to a specific user;");
         System.out.println("  file  - send a file to a specific user;");
-        System.out.println("  exit  - close the client.");
+        System.out.println("  exit  - close the client.\n");
     }
 }
