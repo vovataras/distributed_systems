@@ -352,7 +352,6 @@ public class CommandManager implements Const{
         if(message.length == 1){
             if (!Arrays.equals(message, CMD_RECEIVE_FILE_EMPTY))
                 System.out.println("ERROR: receive file");
-
         } else {
             try {
                 Object[] msg = deserialize(message, Object[].class);

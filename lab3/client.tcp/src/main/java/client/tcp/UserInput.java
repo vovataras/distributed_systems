@@ -10,18 +10,17 @@ public class UserInput implements Const{
     UserInput() {
         reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.println("Hello, what do you want to do?");
-        System.out.println("Use the \"help\" command to get help.");
+        System.out.println("Use the \"help\" command to get help.\n");
     }
 
     String[] getUserCommand() throws IOException {
         // TODO: return object instead of string
-        String userCommand = "";
+        String userCommand;
         String[] command =  new String[0];
         boolean isEmptyCommand = true;
         
         while(isEmptyCommand) {
             isEmptyCommand = false;
-//            System.out.print(">>> ");
             userCommand = reader.readLine();
     
             command = userCommand.split(" ");
@@ -58,6 +57,7 @@ public class UserInput implements Const{
                     isEmptyCommand = true;
                     help();
                     break;
+
                 default:
                     if (userCommand.length() == 0){
                         System.out.println("Please enter command!\n");

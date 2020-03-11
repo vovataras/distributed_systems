@@ -6,6 +6,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
 public class ConnectionHandler implements Closeable{
@@ -13,9 +14,6 @@ public class ConnectionHandler implements Closeable{
     private CommandManager commandManager;
     private volatile boolean isClosing = false;
     private UserInput userInput;
-    private String[] users;
-
-    private byte currentCommand;
 
     DataInputStream readStream;
     DataOutputStream outputStream;
@@ -64,7 +62,7 @@ public class ConnectionHandler implements Closeable{
                 }
 
                 // If user enter "exit"
-                if (userCommand[0].getBytes()[0] == (byte)Const.CMD_EXIT) {
+                if (userCommand[0].getBytes()[0] == Const.CMD_EXIT) {
                     close();
                     if (myThread != null)
                         myThread.interrupt();
@@ -72,7 +70,7 @@ public class ConnectionHandler implements Closeable{
                 }
 
                 // Get the current command for decoding server response in the future
-                currentCommand = userCommand[0].getBytes()[0];
+                byte currentCommand = userCommand[0].getBytes()[0];
 
                 // Get encoded data for sending
                 request = commandManager.execute(userCommand);
@@ -101,7 +99,7 @@ public class ConnectionHandler implements Closeable{
                 }
 
                 // decode the response
-                this.commandManager.decode(this.currentCommand, response);
+                this.commandManager.decode(currentCommand, response);
             }
         }
         catch (IOException | InterruptedException ex) {
@@ -123,8 +121,8 @@ class MyThread extends Thread {
 
     DataInputStream readStream;
     DataOutputStream outputStream;
-    ArrayList<String> currUsers = new ArrayList<String>();
-    ArrayList<String> oldUsers = new ArrayList<String>();
+    ArrayList<String> currUsers = new ArrayList<>();
+    ArrayList<String> oldUsers = new ArrayList<>();
 
     private boolean isEncoded = false;
 
@@ -189,26 +187,27 @@ class MyThread extends Thread {
                 for (String user: usersOnServer) {
                     oldUsers.add(user);
                     System.out.println(user + " is logged in.");
+                    System.out.println();
                 }
             } else {
-                for (String user: usersOnServer) {
-                    currUsers.add(user);
-                }
+                // Add all users to currentUsers
+                currUsers.addAll(Arrays.asList(usersOnServer));
 
                 for (String user: currUsers) {
-                    if (!oldUsers.contains(user))
+                    if (!oldUsers.contains(user)) {
                         System.out.println(user + " is logged in.");
+                    }
                 }
 
                 for (String user: oldUsers) {
-                    if (!currUsers.contains(user))
+                    if (!currUsers.contains(user)) {
                         System.out.println(user + " is logged out.");
+                    }
                 }
 
                 oldUsers = (ArrayList<String>) currUsers.clone();
                 currUsers.clear();
             }
-            System.out.println();
         }
     }
 }
