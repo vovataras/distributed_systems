@@ -18,3 +18,34 @@
 		mvn clean compile exec:java -D exec.args="0.0.0.0 4321"
 
    * arguments may be yours, but according to which the server is running, and you can omit them (the client will run with `args="0.0.0.0 4321"`).
+
+## Commands format:
+
+### `ping`
+Testing connection (no parameters).
+
+### `echo`
+Testing sending message. Enter the command and message for echo:
+
+    echo message for testing
+
+### `login`
+Log in on server or create new user. Has 2 parameters (login, password):
+
+    login user_login user_password
+
+### `list`
+Displays active users (no parameters).
+
+### `msg`
+Send message to user. Has 2 parameters (recipient login, message(string)):
+
+    msg to_user text message for another user
+
+### `file`
+Send file to user. Has 3 parameters (recipient login, name of file, path to file):
+
+    file to_user filename /path/to/file
+
+### `exit`
+Shutdown the client (no parameters);
