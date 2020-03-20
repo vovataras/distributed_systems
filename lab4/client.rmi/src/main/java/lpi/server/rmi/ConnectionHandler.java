@@ -122,6 +122,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
+    // check if user is logged in to the server
     private boolean loggedIn(){
         if (this.sessionId != null){
             return true;
@@ -145,13 +146,13 @@ public class ConnectionHandler implements Closeable {
         System.out.println("Login ok.\n");
 
         Monitoring monitoring = new Monitoring(this.proxy, this.sessionId);
-        //running timer task as daemon thread
+        // running timer task as daemon thread
         timer = new Timer(true);
-        timer.scheduleAtFixedRate(monitoring, 0, 10*1000);
+        // start checking messages, files, and users with a certain frequency
+        timer.scheduleAtFixedRate(monitoring, 0, 5*1000);
     }
 
 
-    // TODO: check "list" method
     private void list() throws RemoteException {
         String[] users = proxy.listUsers(this.sessionId);
 
@@ -166,7 +167,6 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    // TODO: check "msg" method
     private void msg(String[] command) throws RemoteException {
         if (command.length < 2) {
             System.out.println("You need to enter receiver login!");
@@ -184,7 +184,6 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    // TODO: check "file" method
     private void file(String[] command) throws RemoteException {
         if (command.length < 2) {
             System.out.println("You need to enter receiver login!\n");

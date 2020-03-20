@@ -31,7 +31,6 @@ public class RmiClient implements Closeable {
             ConnectionHandler connectionHandler = new ConnectionHandler(this.proxy);
             connectionHandler.run();
         } catch (RemoteException | NotBoundException e) {
-//            e.printStackTrace();
             System.out.println(e.getMessage()+"\n");
         }
     }

@@ -33,8 +33,7 @@ class Monitoring extends TimerTask {
             if(loggedIn())
                 receiveFile();
 
-            Thread.sleep(1000);
-        } catch (RemoteException | InterruptedException e) {
+        } catch (RemoteException e) {
             e.printStackTrace();
         }
     }
@@ -50,7 +49,6 @@ class Monitoring extends TimerTask {
     }
 
 
-    // TODO: check "receiveMsg" method
     private void receiveMsg() throws RemoteException {
         IServer.Message receivedMessage =  proxy.receiveMessage(sessionId);
         if (receivedMessage != null) {
@@ -61,7 +59,6 @@ class Monitoring extends TimerTask {
     }
 
 
-    // TODO: check "receiveFile" method
     private void receiveFile() throws RemoteException {
         String folderPath = "./receivedFiles";
 
@@ -87,7 +84,6 @@ class Monitoring extends TimerTask {
 
 
     private void checkUsers() throws RemoteException {
-        // TODO: write comments
         String[] usersOnServer = proxy.listUsers(this.sessionId);
 
         if (usersOnServer.length != 0){
@@ -101,18 +97,21 @@ class Monitoring extends TimerTask {
                 // Add all users to currentUsers
                 currUsers.addAll(Arrays.asList(usersOnServer));
 
+                // compare with oldUsers and print new users on server
                 for (String user: currUsers) {
                     if (!oldUsers.contains(user)) {
                         System.out.println(user + " is logged in.");
                     }
                 }
 
+                // compare with oldUsers and then print users which logged out from server
                 for (String user: oldUsers) {
                     if (!currUsers.contains(user)) {
                         System.out.println(user + " is logged out.");
                     }
                 }
 
+                // move current users to old, and remove current
                 oldUsers = (ArrayList<String>) currUsers.clone();
                 currUsers.clear();
             }
