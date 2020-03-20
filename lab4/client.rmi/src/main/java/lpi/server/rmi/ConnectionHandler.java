@@ -91,17 +91,16 @@ public class ConnectionHandler implements Closeable {
                         file(command);
                     break;
                 case "receive_msg":
-                    // TODO: write "receiveMsg" method
-                    IServer.Message receivedMessage =  proxy.receiveMessage(sessionId);
+                    if (loggedIn())
+                        receiveMsg();
                     break;
                 case "receive_file":
-                    // TODO: write "receiveFile" method
-                    IServer.FileInfo receivedFile =  proxy.receiveFile(sessionId);
+                    if (loggedIn())
+                        receiveFile();
                     break;
                 case "exit":
                     if (loggedIn())
                         proxy.exit(sessionId);
-
                     return;
                 case "help":
                     help();
@@ -203,6 +202,48 @@ public class ConnectionHandler implements Closeable {
 
         proxy.sendFile(this.sessionId, fileInfo);
         System.out.println("File successfully sent.\n");
+    }
+
+
+
+    // TODO: check "receiveMsg" method
+    private void receiveMsg() throws RemoteException {
+        IServer.Message receivedMessage =  proxy.receiveMessage(sessionId);
+        if (receivedMessage != null) {
+            System.out.println("You have a new message!");
+            System.out.println("From: " + receivedMessage.getSender());
+            System.out.println("Message: " + receivedMessage.getMessage() + "\n");
+        } else {
+            System.out.println("No messages yet.\n");
+        }
+    }
+
+
+
+    // TODO: write "receiveFile" method
+    private void receiveFile() throws RemoteException {
+        String folderPath = "./receivedFiles";
+
+        IServer.FileInfo receivedFile =  proxy.receiveFile(sessionId);
+
+        if (receivedFile != null) {
+            System.out.println("You have a new file!");
+            System.out.println("From: " + receivedFile.getSender());
+            System.out.println("File: " + receivedFile.getFilename() + "\n");
+
+            File folder = new File(folderPath);
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+
+            try {
+                receivedFile.saveFileTo(folder);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("No files yet.\n");
+        }
     }
 
 
