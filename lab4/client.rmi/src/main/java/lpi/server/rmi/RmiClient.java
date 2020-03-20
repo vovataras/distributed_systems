@@ -14,7 +14,6 @@ public class RmiClient implements Closeable {
     private String host = DEFAULT_HOST;
     private int port = DEFAULT_PORT;
 
-    private Registry registry;
     private IServer proxy;
 
     public RmiClient(String[] args) {
@@ -26,8 +25,8 @@ public class RmiClient implements Closeable {
 
     public void run() {
         try {
-            registry = LocateRegistry.getRegistry(host, port);
-            proxy = (IServer)registry.lookup(IServer.RMI_SERVER_NAME);
+            Registry registry = LocateRegistry.getRegistry(host, port);
+            proxy = (IServer) registry.lookup(IServer.RMI_SERVER_NAME);
 
             ConnectionHandler connectionHandler = new ConnectionHandler(this.proxy);
             connectionHandler.run();

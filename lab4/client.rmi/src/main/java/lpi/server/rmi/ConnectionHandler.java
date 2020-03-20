@@ -3,6 +3,7 @@ package lpi.server.rmi;
 import java.io.*;
 import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.Timer;
 
 public class ConnectionHandler implements Closeable {
 
@@ -14,32 +15,45 @@ public class ConnectionHandler implements Closeable {
     // unique session ID (need to login)
     private String sessionId;
 
+    private Timer timer;
+
+
     public ConnectionHandler(IServer proxy) {
         this.proxy = proxy;
         this.reader = new BufferedReader(new InputStreamReader(System.in));
-
-        System.out.println("Hello, what do you want to do?");
-        System.out.println("Use the \"help\" command to get help.\n");
     }
 
 
+    @Override
+    public void close() throws IOException {
+        if (proxy != null){
+            if (sessionId != null) {
+                proxy.exit(sessionId);
+                sessionId = null;
+            }
+        }
+
+        if (reader != null)
+            reader.close();
+
+        if (timer != null)
+            timer.cancel();
+    }
+
 
     public void run() {
+        System.out.println("Hello, what do you want to do?");
+        System.out.println("Use the \"help\" command to get help.\n");
+
         try{
             while(!exit) {
                 String[] userCommand = getUserCommand();
-                if (userCommand[0].equalsIgnoreCase("exit"))
-                    exit = true;
-
                 getResponse(userCommand);
             }
-
-            close();
         } catch (IOException e) {
             e.getStackTrace();
         }
     }
-
 
 
     private String[] getUserCommand() throws IOException {
@@ -59,9 +73,6 @@ public class ConnectionHandler implements Closeable {
 
         return command;
     }
-
-
-
 
 
     private void getResponse(String[] command) {
@@ -90,17 +101,9 @@ public class ConnectionHandler implements Closeable {
                     if (loggedIn())
                         file(command);
                     break;
-                case "receive_msg":
-                    if (loggedIn())
-                        receiveMsg();
-                    break;
-                case "receive_file":
-                    if (loggedIn())
-                        receiveFile();
-                    break;
                 case "exit":
-                    if (loggedIn())
-                        proxy.exit(sessionId);
+                    this.exit = true;
+                    close();
                     return;
                 case "help":
                     help();
@@ -113,9 +116,10 @@ public class ConnectionHandler implements Closeable {
         }
         catch (RemoteException e) {
             System.out.println(e.getMessage() + "\n");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
-
 
 
     private boolean loggedIn(){
@@ -128,17 +132,23 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    // TODO: check "login" method
     private void login(String[] command) throws RemoteException {
-        if (command.length != 3) {
+        if (command.length < 3) {
+            System.out.println("You need to enter your login and password!\n");
+            return;
+        } else if (command.length > 3) {
             System.out.println("Wrong params!\n");
             return;
         }
 
         this.sessionId = proxy.login(command[1], command[2]);
         System.out.println("Login ok.\n");
-    }
 
+        Monitoring monitoring = new Monitoring(this.proxy, this.sessionId);
+        //running timer task as daemon thread
+        timer = new Timer(true);
+        timer.scheduleAtFixedRate(monitoring, 0, 10*1000);
+    }
 
 
     // TODO: check "list" method
@@ -156,7 +166,6 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-
     // TODO: check "msg" method
     private void msg(String[] command) throws RemoteException {
         if (command.length < 2) {
@@ -170,10 +179,9 @@ public class ConnectionHandler implements Closeable {
 
         String[] message = Arrays.copyOfRange(command, 2, command.length);
         proxy.sendMessage(this.sessionId,
-                new IServer.Message(command[1], String.join("", message)));
+                new IServer.Message(command[1], String.join(" ", message)));
         System.out.println("Message successfully sent.\n");
     }
-
 
 
     // TODO: check "file" method
@@ -205,64 +213,14 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-
-    // TODO: check "receiveMsg" method
-    private void receiveMsg() throws RemoteException {
-        IServer.Message receivedMessage =  proxy.receiveMessage(sessionId);
-        if (receivedMessage != null) {
-            System.out.println("You have a new message!");
-            System.out.println("From: " + receivedMessage.getSender());
-            System.out.println("Message: " + receivedMessage.getMessage() + "\n");
-        } else {
-            System.out.println("No messages yet.\n");
-        }
-    }
-
-
-
-    // TODO: write "receiveFile" method
-    private void receiveFile() throws RemoteException {
-        String folderPath = "./receivedFiles";
-
-        IServer.FileInfo receivedFile =  proxy.receiveFile(sessionId);
-
-        if (receivedFile != null) {
-            System.out.println("You have a new file!");
-            System.out.println("From: " + receivedFile.getSender());
-            System.out.println("File: " + receivedFile.getFilename() + "\n");
-
-            File folder = new File(folderPath);
-            if (!folder.exists()) {
-                folder.mkdir();
-            }
-
-            try {
-                receivedFile.saveFileTo(folder);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        } else {
-            System.out.println("No files yet.\n");
-        }
-    }
-
-
-
     // TODO: write some tips
     private void help(){
-        System.out.println("  ping  - test the ability of the source computer to reach a server;");
-        System.out.println("  echo  - display line of text/string that are passed as an argument;");
-        System.out.println("  login - establish a new session with the server;");
-        System.out.println("  list  - list all users on the server;");
-        System.out.println("  msg   - send a message to a specific user;");
-        System.out.println("  file  - send a file to a specific user;");
-        System.out.println("  exit  - close the client.\n");
-    }
-
-
-
-    @Override
-    public void close() throws IOException {
-        this.reader.close();
+        System.out.println(" ping  - test the ability of the source computer to reach a server;");
+        System.out.println(" echo  - display line of text/string that are passed as an argument;");
+        System.out.println(" login - establish a new session with the server;");
+        System.out.println(" list  - list all users on the server;");
+        System.out.println(" msg   - send a message to a specific user;");
+        System.out.println(" file  - send a file to a specific user;");
+        System.out.println(" exit  - close the client.\n");
     }
 }
