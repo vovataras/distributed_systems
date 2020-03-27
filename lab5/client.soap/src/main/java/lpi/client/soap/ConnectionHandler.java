@@ -1,9 +1,7 @@
 package lpi.client.soap;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 //import java.util.Timer;
@@ -99,13 +97,11 @@ public class ConnectionHandler implements Closeable {
                     break;
                 case "msg":
                     if (loggedIn())
-                        System.out.println("msg\n");
-//                        msg(command);
+                        msg(command);
                     break;
                 case "file":
                     if (loggedIn())
-                        System.out.println("file\n");
-//                        file(command);
+                        file(command);
                     break;
                 case "exit":
                     this.exit = true;
@@ -173,50 +169,53 @@ public class ConnectionHandler implements Closeable {
     }
 
 
+    private void msg(String[] command) throws ArgumentFault, ServerFault {
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!");
+            return;
+        }
+        if (command.length < 3) {
+            System.out.println("You need to enter a message!");
+            return;
+        }
 
-//    private void msg(String[] command) throws RemoteException {
-//        if (command.length < 2) {
-//            System.out.println("You need to enter receiver login!");
-//            return;
-//        }
-//        if (command.length < 3) {
-//            System.out.println("You need to enter a message!");
-//            return;
-//        }
-//
-//        String[] message = Arrays.copyOfRange(command, 2, command.length);
-//        proxy.sendMessage(this.sessionId,
-//                new IServer.Message(command[1], String.join(" ", message)));
-//        System.out.println("Message successfully sent.\n");
-//    }
-//
-//    private void file(String[] command) throws RemoteException {
-//        if (command.length < 2) {
-//            System.out.println("You need to enter receiver login!\n");
-//            return;
-//        }
-//        else if (command.length < 3) {
-//            System.out.println("You need to enter a path to the file!!\n");
-//            return;
-//        }
-//
-//        File file = new File(command[2]);
-//        if (!file.isFile()) {
-//            System.out.println("Incorrect file path or it is not a file.\n");
-//            return;
-//        }
-//
-//        IServer.FileInfo fileInfo = null;
-//        try {
-//            fileInfo = new IServer.FileInfo(command[1], file);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//
-//        proxy.sendFile(this.sessionId, fileInfo);
-//        System.out.println("File successfully sent.\n");
-//    }
+        String[] messageContent = Arrays.copyOfRange(command, 2, command.length);
 
+        Message message = new Message();
+        message.setReceiver(command[1]);
+        message.setMessage(String.join(" ", messageContent));
+
+        serverProxy.sendMessage(this.sessionId, message);
+        System.out.println("Message successfully sent.\n");
+    }
+
+
+    private void file(String[] command) throws ArgumentFault, ServerFault, IOException {
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!\n");
+            return;
+        }
+        else if (command.length < 3) {
+            System.out.println("You need to enter a path to the file!!\n");
+            return;
+        }
+
+        File file = new File(command[2]);
+        if (!file.isFile()) {
+            System.out.println("Incorrect file path or it is not a file.\n");
+            return;
+        }
+
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setReceiver(command[1]);
+        fileInfo.setFilename(file.getName());
+        fileInfo.setFileContent(fileContent);
+
+        serverProxy.sendFile(this.sessionId, fileInfo);
+        System.out.println("File successfully sent.\n");
+    }
 
 
     // TODO: write some tips
