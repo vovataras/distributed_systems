@@ -224,16 +224,16 @@ public class ConnectionHandler implements Closeable {
     private void help() {
         System.out.println("ping  - test the ability of the source computer to reach a server;\n");
         System.out.println("echo  - display line of text/string that are passed as an argument;\n" +
-                           " Format: echo [message]\n");
+                           " Format: echo <message>\n");
         System.out.println("login - establish a new session with the server;\n" +
-                           " Format: login [username] [password]\n");
+                           " Format: login <username> <password>\n");
         System.out.println("list  - list all users on the server;\n");
         System.out.println("msg   - send a message to a specific user;\n" +
                            " User must be registered on the server!\n" +
-                           " Format: msg [receiver username] [message]\n");
+                           " Format: msg <receiver username> <message>\n");
         System.out.println("file  - send a file to a specific user;\n" +
                            " User must be registered on the server!\n" +
-                           " Format: file [receiver username] [/path/to/file]\n");
+                           " Format: file <receiver username> </path/to/file>\n");
         System.out.println("exit  - close the client.\n");
     }
 }
