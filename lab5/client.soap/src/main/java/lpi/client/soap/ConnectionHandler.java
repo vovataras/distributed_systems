@@ -4,7 +4,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
-//import java.util.Timer;
+import java.util.Timer;
 
 public class ConnectionHandler implements Closeable {
 
@@ -16,7 +16,7 @@ public class ConnectionHandler implements Closeable {
     // unique session ID (need to login)
     private String sessionId;
 
-//    private Timer timer;
+    private Timer timer;
 
 
     public ConnectionHandler(IChatServer serverProxy) {
@@ -39,8 +39,8 @@ public class ConnectionHandler implements Closeable {
         if (reader != null)
             reader.close();
 
-//        if (timer != null)
-//            timer.cancel();
+        if (timer != null)
+            timer.cancel();
     }
 
     public void run() {
@@ -147,11 +147,11 @@ public class ConnectionHandler implements Closeable {
         this.sessionId = serverProxy.login(command[1], command[2]);
         System.out.println("Login ok.\n");
 
-//        Monitoring monitoring = new Monitoring(this.proxy, this.sessionId);
-//        // running timer task as daemon thread
-//        timer = new Timer(true);
-//        // start checking messages, files, and users with a certain frequency
-//        timer.scheduleAtFixedRate(monitoring, 0, 5*1000);
+        Monitoring monitoring = new Monitoring(this.serverProxy, this.sessionId);
+        // running timer task as daemon thread
+        timer = new Timer(true);
+        // start checking messages, files, and users with a certain frequency
+        timer.scheduleAtFixedRate(monitoring, 0, 5*1000);
     }
 
 
@@ -171,11 +171,11 @@ public class ConnectionHandler implements Closeable {
 
     private void msg(String[] command) throws ArgumentFault, ServerFault {
         if (command.length < 2) {
-            System.out.println("You need to enter receiver login!");
+            System.out.println("You need to enter receiver login!\n");
             return;
         }
         if (command.length < 3) {
-            System.out.println("You need to enter a message!");
+            System.out.println("You need to enter a message!\n");
             return;
         }
 
@@ -218,14 +218,17 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    // TODO: write some tips
-    private void help(){
-        System.out.println(" ping  - test the ability of the source computer to reach a server;");
-        System.out.println(" echo  - display line of text/string that are passed as an argument;");
-        System.out.println(" login - establish a new session with the server;");
-        System.out.println(" list  - list all users on the server;");
-        System.out.println(" msg   - send a message to a specific user;");
-        System.out.println(" file  - send a file to a specific user;");
-        System.out.println(" exit  - close the client.\n");
+    private void help() {
+        System.out.println("ping  - test the ability of the source computer to reach a server;\n");
+        System.out.println("echo  - display line of text/string that are passed as an argument;\n" +
+                           " Format: echo [message]\n");
+        System.out.println("login - establish a new session with the server;\n" +
+                           " Format: login [username] [password]\n");
+        System.out.println("list  - list all users on the server;\n");
+        System.out.println("msg   - send a message to a specific user;\n" +
+                           " Format: msg [receiver username] [message]\n");
+        System.out.println("file  - send a file to a specific user;\n" +
+                           " Format: file [receiver username] [/path/to/file]\n");
+        System.out.println("exit  - close the client.\n");
     }
 }
