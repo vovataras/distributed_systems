@@ -103,6 +103,13 @@ class Monitoring extends TimerTask {
                 for (String user: currUsers) {
                     if (!oldUsers.contains(user)) {
                         System.out.println(user + " is logged in.");
+
+                        // Bonus task
+                        Message message = new Message();
+                        message.setReceiver(user);
+                        message.setMessage("Hello there, " + user + "!");
+
+                        serverProxy.sendMessage(this.sessionId, message);
                     }
                 }
 

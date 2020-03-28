@@ -151,7 +151,7 @@ public class ConnectionHandler implements Closeable {
         // running timer task as daemon thread
         timer = new Timer(true);
         // start checking messages, files, and users with a certain frequency
-        timer.scheduleAtFixedRate(monitoring, 0, 5*1000);
+        timer.scheduleAtFixedRate(monitoring, 0, 3*1000);
     }
 
 
@@ -226,8 +226,10 @@ public class ConnectionHandler implements Closeable {
                            " Format: login [username] [password]\n");
         System.out.println("list  - list all users on the server;\n");
         System.out.println("msg   - send a message to a specific user;\n" +
+                           " User must be registered on the server!\n" +
                            " Format: msg [receiver username] [message]\n");
         System.out.println("file  - send a file to a specific user;\n" +
+                           " User must be registered on the server!\n" +
                            " Format: file [receiver username] [/path/to/file]\n");
         System.out.println("exit  - close the client.\n");
     }

@@ -1,29 +1,31 @@
 package lpi.client.soap;
 
 import java.io.Closeable;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class ChatClient implements Closeable {
 
-//    private static final String DEFAULT_HOST = "0.0.0.0";
-//    private static final int DEFAULT_PORT = 4321;
-//
-//    private String host = DEFAULT_HOST;
-//    private int port = DEFAULT_PORT;
+    private static final String DEFAULT_URL = "http://localhost:4321/chat?wsdl";
 
+    private URL wsdlLocation;
     private IChatServer serverProxy;
 
     public ChatClient(String[] args) {
-//        if (args.length == 2) {
-//            host = args[0].trim();
-//            port = Integer.parseInt(args[1]);
-//        }
+        try {
+            if (args.length == 1) {
+                wsdlLocation = new URL(args[0].trim());
+            } else {
+                wsdlLocation = new URL(DEFAULT_URL);
+            }
+        } catch (MalformedURLException e) {
+            System.out.println(e.getMessage()+"\n");
+        }
     }
 
     public void run() {
         try {
-            ChatServer serverWrapper = new ChatServer();
+            ChatServer serverWrapper = new ChatServer(wsdlLocation);
             serverProxy = serverWrapper.getChatServerProxy();
 
 
