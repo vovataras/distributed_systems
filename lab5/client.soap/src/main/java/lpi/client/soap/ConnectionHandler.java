@@ -116,7 +116,6 @@ public class ConnectionHandler implements Closeable {
                     break;
             }
         } catch (ArgumentFault | ServerFault | LoginFault fault) {
-            fault.printStackTrace();
             System.out.println(fault.getMessage() + "\n");
         } catch (IOException e) {
             e.printStackTrace();
@@ -147,6 +146,7 @@ public class ConnectionHandler implements Closeable {
         this.sessionId = serverProxy.login(command[1], command[2]);
         System.out.println("Login ok.\n");
 
+        // create a monitoring object to check active users and receive new messages and files
         Monitoring monitoring = new Monitoring(this.serverProxy, this.sessionId);
         // running timer task as daemon thread
         timer = new Timer(true);
@@ -181,6 +181,7 @@ public class ConnectionHandler implements Closeable {
 
         String[] messageContent = Arrays.copyOfRange(command, 2, command.length);
 
+        // form a Message to send
         Message message = new Message();
         message.setReceiver(command[1]);
         message.setMessage(String.join(" ", messageContent));
@@ -206,8 +207,10 @@ public class ConnectionHandler implements Closeable {
             return;
         }
 
+        // convert a file to an byte array
         byte[] fileContent = Files.readAllBytes(file.toPath());
 
+        // form a FileInfo to send
         FileInfo fileInfo = new FileInfo();
         fileInfo.setReceiver(command[1]);
         fileInfo.setFilename(file.getName());

@@ -34,7 +34,6 @@ class Monitoring extends TimerTask {
                 receiveFile();
 
         } catch (ArgumentFault | ServerFault fault) {
-            fault.printStackTrace();
             System.out.println(fault.getMessage() + "\n");
         }
     }
@@ -70,11 +69,13 @@ class Monitoring extends TimerTask {
             System.out.println("From: " + receivedFile.getSender());
             System.out.println("File: " + receivedFile.getFilename() + "\n");
 
+            // check if there is a folder to save the files
             File folder = new File(folderPath);
             if (!folder.exists()) {
                 folder.mkdir();
             }
 
+            // create a file and write bytes to it
             try (FileOutputStream stream =
                          new FileOutputStream(folder.getPath() + "/" + receivedFile.getFilename())) {
                 stream.write(receivedFile.fileContent);
@@ -105,10 +106,11 @@ class Monitoring extends TimerTask {
                         System.out.println(user + " is logged in.");
 
                         // Bonus task
+                        // form the Message to send
                         Message message = new Message();
                         message.setReceiver(user);
                         message.setMessage("Hello there, " + user + "!");
-
+                        // and send it
                         serverProxy.sendMessage(this.sessionId, message);
                     }
                 }

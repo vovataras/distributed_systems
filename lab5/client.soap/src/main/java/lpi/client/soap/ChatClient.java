@@ -12,6 +12,7 @@ public class ChatClient implements Closeable {
     private IChatServer serverProxy;
 
     public ChatClient(String[] args) {
+        // form the url of the web service
         try {
             if (args.length == 1) {
                 wsdlLocation = new URL(args[0].trim());
@@ -25,9 +26,9 @@ public class ChatClient implements Closeable {
 
     public void run() {
         try {
+            // obtain a proxy object that allows to invoke methods on the server
             ChatServer serverWrapper = new ChatServer(wsdlLocation);
             serverProxy = serverWrapper.getChatServerProxy();
-
 
             ConnectionHandler connectionHandler = new ConnectionHandler(serverProxy);
             connectionHandler.run();
