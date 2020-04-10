@@ -1,12 +1,17 @@
 package lpi.client.rest;
 
+import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
+
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.ConnectException;
 import java.util.Arrays;
 
 public class ConnectionHandler implements Closeable {
@@ -70,8 +75,8 @@ public class ConnectionHandler implements Closeable {
 
 
     private void getResponse(String[] command) {
-        try{
-            switch (command[0]) {
+        try {
+            switch ( command[0] ) {
                 case "ping":
                     ping();
                     break;
@@ -79,8 +84,7 @@ public class ConnectionHandler implements Closeable {
                     echo(command);
                     break;
                 case "login":
-                    System.out.println("Login\n");
-//                    login(command);
+                    login(command);
                     break;
 //                case "list":
 //                    if (loggedIn())
@@ -106,8 +110,8 @@ public class ConnectionHandler implements Closeable {
                     System.out.println("Not found this command...\n");
                     break;
             }
-//        } catch (ArgumentFault | ServerFault | LoginFault fault) {
-//            System.out.println(fault.getMessage() + "\n");
+        } catch (ConnectException e) {
+            System.out.println(e.getMessage() + "\n");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -125,7 +129,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void ping() {
+    private void ping() throws ConnectException {
         String response = client.target(targetURL + "/ping")
                 .request(MediaType.TEXT_PLAIN_TYPE).get(String.class);
 
@@ -133,7 +137,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void echo(String[] command) {
+    private void echo(String[] command) throws ConnectException {
         String[] echoMessage = Arrays.copyOfRange(command, 1, command.length);
 
         String response = client.target(targetURL+ "/echo")
@@ -141,6 +145,45 @@ public class ConnectionHandler implements Closeable {
                 .post(Entity.text(String.join("", echoMessage)), String.class);
 
         System.out.println(response + "\n");
+    }
+
+
+    private void login(String[] command) throws ConnectException {
+        if (command.length < 3) {
+            System.out.println("You need to enter your login and password!\n");
+            return;
+        } else if (command.length > 3) {
+            System.out.println("Wrong params!\n");
+            return;
+        }
+
+        UserInfo userInfo = new UserInfo();
+        userInfo.login = command[0];
+        userInfo.password = command[1];
+        Entity userInfoEntity = Entity.entity(userInfo,
+                MediaType.APPLICATION_JSON_TYPE);
+        Response response = client.target(targetURL + "/user")
+                .request().put(userInfoEntity);
+
+
+        if (response.getStatus() == Status.CREATED.getStatusCode())
+            System.out.println("New user registered\n");
+        else if (response.getStatus() == Status.ACCEPTED.getStatusCode())
+            System.out.println("Login ok.\n");
+        else if (response.getStatus() == Status.BAD_REQUEST.getStatusCode()) {
+            System.out.println("Request body is not specified or invalid\n");
+            return;
+        } else if (response.getStatus() == Status.UNAUTHORIZED.getStatusCode()) {
+            System.out.println("Provided login/password pair is invalid\n");
+            return;
+        } else if (response.getStatus() == Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+            System.out.println("Internal server error\n");
+            return;
+        }
+
+        // register authentication feature, that will authenticate all further requests
+        isLoggedIn = true;
+        this.client.register(HttpAuthenticationFeature.basic(userInfo.login, userInfo.password));
     }
 
 
