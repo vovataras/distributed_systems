@@ -10,10 +10,8 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 public class ConnectionHandler implements Closeable {
@@ -99,10 +97,14 @@ public class ConnectionHandler implements Closeable {
                     if (loggedIn())
                         receiveMsg();
                     break;
-//                case "file":
-//                    if (loggedIn())
-//                        file(command);
-//                    break;
+                case "file":
+                    if (loggedIn())
+                        file(command);
+                    break;
+                case "receive_file":
+                    if (loggedIn())
+                        rcvFile();
+                    break;
                 case "exit":
                     this.exit = true;
                     close();
@@ -311,6 +313,131 @@ public class ConnectionHandler implements Closeable {
         System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
     }
 
+
+    private void file(String[] command) throws IOException {
+
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!\n");
+            return;
+        }
+        else if (command.length < 3) {
+            System.out.println("You need to enter a path to the file!!\n");
+            return;
+        }
+
+        File file = new File(command[2]);
+        if (!file.isFile()) {
+            System.out.println("Incorrect file path or it is not a file.\n");
+            return;
+        }
+
+        java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+        String fileContent = encoder
+                .encodeToString(Files.readAllBytes(file.toPath()));
+
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.sender = this.username;
+        fileInfo.filename = file.getName();
+        fileInfo.content = fileContent;
+        Entity fileInfoEntity = Entity.entity(fileInfo,
+                MediaType.APPLICATION_JSON_TYPE);
+
+        Response response = client.target(targetURL + "/" +  command[1] + "/files")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .post(fileInfoEntity);
+
+        System.out.println("Debug: " + response.getStatus() + "\n");
+        if (response.getStatus() == Status.CREATED.getStatusCode()) {
+            System.out.println("The file is processed\n");
+        }
+
+    }
+
+
+    private void rcvFile() {
+        Response response = client.target(targetURL + "/" + this.username + "/files")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get();
+
+        if (response.getStatus() != Status.OK.getStatusCode()) {
+            System.out.println(response.getStatus());
+            System.out.println("Error\n");
+            return;
+        }
+
+        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(String.class);
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray fileIds = (JSONArray) jsonObject.get("items");
+
+            System.out.println("Number of files on the server: " + fileIds.length() + ".");
+
+            if (fileIds.length() > 0){
+                System.out.println("Files:");
+
+                for (int i = 0; i < fileIds.length(); i++) {
+                    receiveFile(this.username, fileIds.get(i));
+                    deleteFile(this.username, fileIds.get(i));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void receiveFile(String username, Object fileId) {
+        String folderPath = "./receivedFiles";
+
+        String jsonString =
+                client.target(targetURL + "/" + username + "/files/" + fileId)
+                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .get(String.class);
+
+        try {
+            JSONObject jsonObjectFile = new JSONObject(jsonString);
+
+            System.out.println("Sender: " + jsonObjectFile.get("sender"));
+            System.out.println("Filename: " + jsonObjectFile.get("filename"));
+
+            String encodedFileContent = (String) jsonObjectFile.get("content");
+            java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+            byte[] decodedContent = decoder.decode(encodedFileContent);
+
+
+            // check if there is a folder to save the files
+            File folder = new File(folderPath);
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+
+            // create a file and write bytes to it
+            try (FileOutputStream stream =
+                         new FileOutputStream(folder.getPath() + "/" + jsonObjectFile.get("filename"))) {
+                stream.write(decodedContent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
+
+            System.out.println();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void deleteFile(String username, Object fileId) {
+        Response responseOfDelete =
+                client.target(targetURL + "/" + username + "/files/" + fileId)
+                        .request().delete();
+
+        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
+    }
 
 
 
