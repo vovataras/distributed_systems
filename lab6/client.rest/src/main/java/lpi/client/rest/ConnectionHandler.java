@@ -1,5 +1,8 @@
 package lpi.client.rest;
 
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 
 import javax.ws.rs.client.Client;
@@ -11,7 +14,6 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.ConnectException;
 import java.util.Arrays;
 
 public class ConnectionHandler implements Closeable {
@@ -22,9 +24,6 @@ public class ConnectionHandler implements Closeable {
 
     private boolean exit = false;
     private boolean isLoggedIn = false;
-
-//    // unique session ID (need to login)
-//    private String sessionId;
 
     public ConnectionHandler(Client client, String targetURL) {
         this.client = client;
@@ -86,10 +85,10 @@ public class ConnectionHandler implements Closeable {
                 case "login":
                     login(command);
                     break;
-//                case "list":
-//                    if (loggedIn())
-//                        list();
-//                    break;
+                case "list":
+                    if (loggedIn())
+                        list();
+                    break;
 //                case "msg":
 //                    if (loggedIn())
 //                        msg(command);
@@ -110,10 +109,8 @@ public class ConnectionHandler implements Closeable {
                     System.out.println("Not found this command...\n");
                     break;
             }
-        } catch (ConnectException e) {
+        } catch (Exception e) {
             System.out.println(e.getMessage() + "\n");
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -129,7 +126,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void ping() throws ConnectException {
+    private void ping() {
         String response = client.target(targetURL + "/ping")
                 .request(MediaType.TEXT_PLAIN_TYPE).get(String.class);
 
@@ -137,7 +134,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void echo(String[] command) throws ConnectException {
+    private void echo(String[] command) {
         String[] echoMessage = Arrays.copyOfRange(command, 1, command.length);
 
         String response = client.target(targetURL+ "/echo")
@@ -148,7 +145,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void login(String[] command) throws ConnectException {
+    private void login(String[] command) {
         if (command.length < 3) {
             System.out.println("You need to enter your login and password!\n");
             return;
@@ -158,8 +155,8 @@ public class ConnectionHandler implements Closeable {
         }
 
         UserInfo userInfo = new UserInfo();
-        userInfo.login = command[0];
-        userInfo.password = command[1];
+        userInfo.login = command[1];
+        userInfo.password = command[2];
         Entity userInfoEntity = Entity.entity(userInfo,
                 MediaType.APPLICATION_JSON_TYPE);
         Response response = client.target(targetURL + "/user")
@@ -182,8 +179,39 @@ public class ConnectionHandler implements Closeable {
         }
 
         // register authentication feature, that will authenticate all further requests
+        this.client.register(HttpAuthenticationFeature
+                .basic(userInfo.login, userInfo.password));
         isLoggedIn = true;
-        this.client.register(HttpAuthenticationFeature.basic(userInfo.login, userInfo.password));
+    }
+
+
+    private void list() {
+        Response response = client.target(targetURL + "/users")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get();
+
+
+        String jsonResponse = client.target(targetURL + "/users")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(String.class);
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray users = (JSONArray) jsonObject.get("items");
+
+            System.out.println("Number of users on the server: " + users.length() + ".");
+
+            if (users.length() > 0){
+                System.out.println("Users:");
+
+                for (int i = 0; i < users.length(); i++) {
+                    System.out.println(i+1 + ": " + users.get(i));
+                }
+                System.out.println();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
 
