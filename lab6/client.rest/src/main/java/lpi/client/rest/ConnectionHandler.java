@@ -210,16 +210,18 @@ public class ConnectionHandler implements Closeable {
     private void list() {
         Response response = client.target(targetURL + "/users")
                 .request(MediaType.APPLICATION_JSON_TYPE)
-                .get();
+                .get(Response.class);
 
         if (response.getStatus() != Status.OK.getStatusCode()) {
             System.out.println("Error\n");
             return;
         }
 
-        String jsonResponse = client.target(targetURL + "/users")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(String.class);
+        String jsonResponse = response.readEntity(String.class);
+
+//        String jsonResponse = client.target(targetURL + "/users")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -264,7 +266,7 @@ public class ConnectionHandler implements Closeable {
                         .request(MediaType.APPLICATION_JSON_TYPE)
                         .post(Entity.text(String.join(" ", messageContent)));
 
-        System.out.println("Debug: " + response.getStatus());
+//        System.out.println("Debug: " + response.getStatus());
         if (response.getStatus() == Status.CREATED.getStatusCode()) {
             System.out.println("The message is processed\n");
         }
@@ -371,7 +373,7 @@ public class ConnectionHandler implements Closeable {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .post(fileInfoEntity);
 
-        System.out.println("Debug: " + response.getStatus() + "\n");
+//        System.out.println("Debug: " + response.getStatus() + "\n");
         if (response.getStatus() == Status.CREATED.getStatusCode()) {
             System.out.println("The file is processed\n");
         }

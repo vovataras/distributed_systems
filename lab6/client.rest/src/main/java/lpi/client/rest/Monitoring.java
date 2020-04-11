@@ -61,14 +61,14 @@ public class Monitoring extends TimerTask {
 //        System.out.println();
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-//            System.out.println(response.getStatus());
-//            System.out.println("Error\n");
             return;
         }
 
-        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(String.class);
+        String jsonResponse = response.readEntity(String.class);
+
+//        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -136,9 +136,11 @@ public class Monitoring extends TimerTask {
             return;
         }
 
-        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(String.class);
+        String jsonResponse = response.readEntity(String.class);
+
+//        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -222,14 +224,16 @@ public class Monitoring extends TimerTask {
 
     private void checkUsers() {
         Response response = client.target(targetURL + "/users")
-                .request(MediaType.APPLICATION_JSON_TYPE).get();
+                .request(MediaType.APPLICATION_JSON_TYPE).get(Response.class);
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             return;
         }
 
-        String jsonResponse = client.target(targetURL + "/users")
-                .request(MediaType.APPLICATION_JSON_TYPE).get(String.class);
+        String jsonResponse = response.readEntity(String.class);
+
+//        String jsonResponse = client.target(targetURL + "/users")
+//                .request(MediaType.APPLICATION_JSON_TYPE).get(String.class);
 
         ArrayList <String> usersOnServer = new ArrayList<>();
 
