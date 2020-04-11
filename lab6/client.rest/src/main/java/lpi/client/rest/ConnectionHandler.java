@@ -98,18 +98,18 @@ public class ConnectionHandler implements Closeable {
                     if (loggedIn())
                         msg(command);
                     break;
-                case "receive_msg":
-                    if (loggedIn())
-                        receiveMsg();
-                    break;
+//                case "receive_msg":
+//                    if (loggedIn())
+//                        receiveMsg();
+//                    break;
                 case "file":
                     if (loggedIn())
                         file(command);
                     break;
-                case "receive_file":
-                    if (loggedIn())
-                        rcvFile();
-                    break;
+//                case "receive_file":
+//                    if (loggedIn())
+//                        rcvFile();
+//                    break;
                 case "exit":
                     this.exit = true;
                     close();
@@ -123,8 +123,8 @@ public class ConnectionHandler implements Closeable {
                     break;
             }
         } catch (Exception e) {
-            e.printStackTrace();
-//            System.out.println(e.getMessage() + "\n");
+//            e.printStackTrace();
+            System.out.println(e.getMessage() + "\n");
         }
     }
 
@@ -271,72 +271,72 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void receiveMsg() {
-        Response response = client.target(targetURL + "/" + this.username + "/messages")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get();
-
-        if (response.getStatus() != Status.OK.getStatusCode()) {
-            System.out.println(response.getStatus());
-            System.out.println("Error\n");
-            return;
-        }
-
-        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(String.class);
-
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-
-            JSONArray messageIds = new JSONArray();
-            try {
-                messageIds = (JSONArray) jsonObject.get("items");
-            } catch (ClassCastException e) {
-                messageIds.put(jsonObject.get("items"));
-            }
-
-            System.out.println("Number of messages on the server: " + messageIds.length() + ".");
-
-            if (messageIds.length() > 0){
-                System.out.println("Messages:");
-
-                for (int i = 0; i < messageIds.length(); i++) {
-                    receiveMessage(this.username, messageIds.get(i));
-                    deleteMessage(this.username, messageIds.get(i));
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void receiveMessage(String username, Object messageId) {
-        String jsonString =
-                client.target(targetURL + "/" + username + "/messages/" + messageId)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get(String.class);
-
-        try {
-            JSONObject jsonObjectMessage = new JSONObject(jsonString);
-
-            System.out.println("Sender: " + jsonObjectMessage.get("sender"));
-            System.out.println("Message: " + jsonObjectMessage.get("message"));
-            System.out.println();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void deleteMessage(String username, Object messageId) {
-        Response responseOfDelete =
-                client.target(targetURL + "/" + username + "/messages/" + messageId)
-                        .request().delete();
-
-        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
-    }
+//    private void receiveMsg() {
+//        Response response = client.target(targetURL + "/" + this.username + "/messages")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get();
+//
+//        if (response.getStatus() != Status.OK.getStatusCode()) {
+//            System.out.println(response.getStatus());
+//            System.out.println("Error\n");
+//            return;
+//        }
+//
+//        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get(String.class);
+//
+//        try {
+//            JSONObject jsonObject = new JSONObject(jsonResponse);
+//
+//            JSONArray messageIds = new JSONArray();
+//            try {
+//                messageIds = (JSONArray) jsonObject.get("items");
+//            } catch (ClassCastException e) {
+//                messageIds.put(jsonObject.get("items"));
+//            }
+//
+//            System.out.println("Number of messages on the server: " + messageIds.length() + ".");
+//
+//            if (messageIds.length() > 0){
+//                System.out.println("Messages:");
+//
+//                for (int i = 0; i < messageIds.length(); i++) {
+//                    receiveMessage(this.username, messageIds.get(i));
+//                    deleteMessage(this.username, messageIds.get(i));
+//                }
+//            }
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//
+//    private void receiveMessage(String username, Object messageId) {
+//        String jsonString =
+//                client.target(targetURL + "/" + username + "/messages/" + messageId)
+//                        .request(MediaType.APPLICATION_JSON_TYPE)
+//                        .get(String.class);
+//
+//        try {
+//            JSONObject jsonObjectMessage = new JSONObject(jsonString);
+//
+//            System.out.println("Sender: " + jsonObjectMessage.get("sender"));
+//            System.out.println("Message: " + jsonObjectMessage.get("message"));
+//            System.out.println();
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//
+//    private void deleteMessage(String username, Object messageId) {
+//        Response responseOfDelete =
+//                client.target(targetURL + "/" + username + "/messages/" + messageId)
+//                        .request().delete();
+//
+//        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
+//    }
 
 
     private void file(String[] command) throws IOException {
@@ -379,96 +379,96 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void rcvFile() {
-        Response response = client.target(targetURL + "/" + this.username + "/files")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get();
-
-        if (response.getStatus() != Status.OK.getStatusCode()) {
-            System.out.println(response.getStatus());
-            System.out.println("Error\n");
-            return;
-        }
-
-        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get(String.class);
-
-        try {
-            JSONObject jsonObject = new JSONObject(jsonResponse);
-
-            JSONArray fileIds = new JSONArray();
-            try {
-                fileIds = (JSONArray) jsonObject.get("items");
-            } catch (ClassCastException e) {
-                fileIds.put(jsonObject.get("items"));
-            }
-
-            System.out.println("Number of files on the server: " + fileIds.length() + ".");
-
-            if (fileIds.length() > 0){
-                System.out.println("Files:");
-
-                for (int i = 0; i < fileIds.length(); i++) {
-                    receiveFile(this.username, fileIds.get(i));
-                    deleteFile(this.username, fileIds.get(i));
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void receiveFile(String username, Object fileId) {
-        String folderPath = "./receivedFiles";
-
-        String jsonString =
-                client.target(targetURL + "/" + username + "/files/" + fileId)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get(String.class);
-
-        try {
-            JSONObject jsonObjectFile = new JSONObject(jsonString);
-
-            System.out.println("Sender: " + jsonObjectFile.get("sender"));
-            System.out.println("Filename: " + jsonObjectFile.get("filename"));
-
-            String encodedFileContent = (String) jsonObjectFile.get("content");
-            java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
-            byte[] decodedContent = decoder.decode(encodedFileContent);
-
-
-            // check if there is a folder to save the files
-            File folder = new File(folderPath);
-            if (!folder.exists()) {
-                folder.mkdir();
-            }
-
-            // create a file and write bytes to it
-            try (FileOutputStream stream =
-                         new FileOutputStream(folder.getPath() + "/" + jsonObjectFile.get("filename"))) {
-                stream.write(decodedContent);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-
-            System.out.println();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-
-    private void deleteFile(String username, Object fileId) {
-        Response responseOfDelete =
-                client.target(targetURL + "/" + username + "/files/" + fileId)
-                        .request().delete();
-
-        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
-    }
+//    private void rcvFile() {
+//        Response response = client.target(targetURL + "/" + this.username + "/files")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get();
+//
+//        if (response.getStatus() != Status.OK.getStatusCode()) {
+//            System.out.println(response.getStatus());
+//            System.out.println("Error\n");
+//            return;
+//        }
+//
+//        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
+//                .request(MediaType.APPLICATION_JSON_TYPE)
+//                .get(String.class);
+//
+//        try {
+//            JSONObject jsonObject = new JSONObject(jsonResponse);
+//
+//            JSONArray fileIds = new JSONArray();
+//            try {
+//                fileIds = (JSONArray) jsonObject.get("items");
+//            } catch (ClassCastException e) {
+//                fileIds.put(jsonObject.get("items"));
+//            }
+//
+//            System.out.println("Number of files on the server: " + fileIds.length() + ".");
+//
+//            if (fileIds.length() > 0){
+//                System.out.println("Files:");
+//
+//                for (int i = 0; i < fileIds.length(); i++) {
+//                    receiveFile(this.username, fileIds.get(i));
+//                    deleteFile(this.username, fileIds.get(i));
+//                }
+//            }
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//
+//    private void receiveFile(String username, Object fileId) {
+//        String folderPath = "./receivedFiles";
+//
+//        String jsonString =
+//                client.target(targetURL + "/" + username + "/files/" + fileId)
+//                        .request(MediaType.APPLICATION_JSON_TYPE)
+//                        .get(String.class);
+//
+//        try {
+//            JSONObject jsonObjectFile = new JSONObject(jsonString);
+//
+//            System.out.println("Sender: " + jsonObjectFile.get("sender"));
+//            System.out.println("Filename: " + jsonObjectFile.get("filename"));
+//
+//            String encodedFileContent = (String) jsonObjectFile.get("content");
+//            java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+//            byte[] decodedContent = decoder.decode(encodedFileContent);
+//
+//
+//            // check if there is a folder to save the files
+//            File folder = new File(folderPath);
+//            if (!folder.exists()) {
+//                folder.mkdir();
+//            }
+//
+//            // create a file and write bytes to it
+//            try (FileOutputStream stream =
+//                         new FileOutputStream(folder.getPath() + "/" + jsonObjectFile.get("filename"))) {
+//                stream.write(decodedContent);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//
+//
+//            System.out.println();
+//        } catch (JSONException e) {
+//            e.printStackTrace();
+//        }
+//    }
+//
+//
+//    private void deleteFile(String username, Object fileId) {
+//        Response responseOfDelete =
+//                client.target(targetURL + "/" + username + "/files/" + fileId)
+//                        .request().delete();
+//
+//        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
+//    }
 
 
 
