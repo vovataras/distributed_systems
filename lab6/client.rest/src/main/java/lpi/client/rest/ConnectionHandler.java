@@ -118,7 +118,8 @@ public class ConnectionHandler implements Closeable {
                     break;
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage() + "\n");
+            e.printStackTrace();
+//            System.out.println(e.getMessage() + "\n");
         }
     }
 
@@ -170,7 +171,6 @@ public class ConnectionHandler implements Closeable {
         Response response = client.target(targetURL + "/user")
                 .request().put(userInfoEntity);
 
-
         if (response.getStatus() == Status.CREATED.getStatusCode())
             System.out.println("New user registered\n");
         else if (response.getStatus() == Status.ACCEPTED.getStatusCode())
@@ -210,7 +210,13 @@ public class ConnectionHandler implements Closeable {
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray users = (JSONArray) jsonObject.get("items");
+
+            JSONArray users = new JSONArray();
+            try {
+                users = (JSONArray) jsonObject.get("items");
+            } catch (ClassCastException e) {
+                users.put(jsonObject.get("items"));
+            }
 
             System.out.println("Number of users on the server: " + users.length() + ".");
 
@@ -269,7 +275,13 @@ public class ConnectionHandler implements Closeable {
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray messageIds = (JSONArray) jsonObject.get("items");
+
+            JSONArray messageIds = new JSONArray();
+            try {
+                messageIds = (JSONArray) jsonObject.get("items");
+            } catch (ClassCastException e) {
+                messageIds.put(jsonObject.get("items"));
+            }
 
             System.out.println("Number of messages on the server: " + messageIds.length() + ".");
 
@@ -371,7 +383,13 @@ public class ConnectionHandler implements Closeable {
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
-            JSONArray fileIds = (JSONArray) jsonObject.get("items");
+
+            JSONArray fileIds = new JSONArray();
+            try {
+                fileIds = (JSONArray) jsonObject.get("items");
+            } catch (ClassCastException e) {
+                fileIds.put(jsonObject.get("items"));
+            }
 
             System.out.println("Number of files on the server: " + fileIds.length() + ".");
 
