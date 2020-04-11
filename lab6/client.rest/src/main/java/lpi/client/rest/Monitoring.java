@@ -19,7 +19,7 @@ public class Monitoring extends TimerTask {
     private ArrayList<String> oldUsers = new ArrayList<>();
 
     private Client client;  // jersey REST client
-    private boolean isLoggedIn = false;
+    private boolean isLoggedIn;
     private final String targetURL;
     private String username;
 
@@ -49,26 +49,15 @@ public class Monitoring extends TimerTask {
 
 
 
-
-
     private void receiveMessages() {
         Response response = client.target(targetURL + "/" + this.username + "/messages")
                 .request(MediaType.APPLICATION_JSON_TYPE).get(Response.class);
-
-//        System.out.println("Debug response:");
-//        String responseAsString = response.readEntity(String.class);
-//        System.out.println(responseAsString);
-//        System.out.println();
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             return;
         }
 
         String jsonResponse = response.readEntity(String.class);
-
-//        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
-//                .request(MediaType.APPLICATION_JSON_TYPE)
-//                .get(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -114,15 +103,9 @@ public class Monitoring extends TimerTask {
 
 
     private void deleteMessage(String username, Object messageId) {
-        Response responseOfDelete =
-                client.target(targetURL + "/" + username + "/messages/" + messageId)
-                        .request().delete();
-
-//        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
+        client.target(targetURL + "/" + username + "/messages/" + messageId)
+                .request().delete();
     }
-
-
-
 
 
 
@@ -131,16 +114,10 @@ public class Monitoring extends TimerTask {
                 .request(MediaType.APPLICATION_JSON_TYPE).get();
 
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
-//            System.out.println(response.getStatus());
-//            System.out.println("Error\n");
             return;
         }
 
         String jsonResponse = response.readEntity(String.class);
-
-//        String jsonResponse = client.target(targetURL + "/" + this.username + "/files")
-//                .request(MediaType.APPLICATION_JSON_TYPE)
-//                .get(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
@@ -151,7 +128,6 @@ public class Monitoring extends TimerTask {
             } catch (ClassCastException e) {
                 fileIds.put(jsonObject.get("items"));
             }
-
 
             String endOfSentence = "file!";
             if (fileIds.length() > 1)
@@ -212,11 +188,8 @@ public class Monitoring extends TimerTask {
 
 
     private void deleteFile(String username, Object fileId) {
-        Response responseOfDelete =
-                client.target(targetURL + "/" + username + "/files/" + fileId)
-                        .request().delete();
-
-//        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
+        client.target(targetURL + "/" + username + "/files/" + fileId)
+                .request().delete();
     }
 
 
@@ -231,10 +204,6 @@ public class Monitoring extends TimerTask {
         }
 
         String jsonResponse = response.readEntity(String.class);
-
-//        String jsonResponse = client.target(targetURL + "/users")
-//                .request(MediaType.APPLICATION_JSON_TYPE).get(String.class);
-
         ArrayList <String> usersOnServer = new ArrayList<>();
 
         try {
