@@ -13,17 +13,19 @@ import javax.ws.rs.core.Response.Status;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Timer;
 
 public class ConnectionHandler implements Closeable {
 
     private Client client;  // jersey REST client
     private BufferedReader reader;
-    private String targetURL;
+    private final String targetURL;
 
     private boolean exit = false;
     private boolean isLoggedIn = false;
 
     private String username;
+    private Timer timer;
 
     public ConnectionHandler(Client client, String targetURL) {
         this.client = client;
@@ -37,6 +39,9 @@ public class ConnectionHandler implements Closeable {
 
         if (reader != null)
             reader.close();
+
+        if (timer != null)
+            timer.cancel();
     }
 
     public void run() {
@@ -191,6 +196,14 @@ public class ConnectionHandler implements Closeable {
                 .basic(userInfo.login, userInfo.password));
         this.username = userInfo.login;
         isLoggedIn = true;
+
+
+        // create a monitoring object to check active users and receive new messages and files
+        Monitoring monitoring = new Monitoring(this.client, this.targetURL, this.username);
+        // running timer task as daemon thread
+        timer = new Timer(true);
+        // start checking messages, files, and users with a certain frequency
+        timer.scheduleAtFixedRate(monitoring, 0, 3*1000);
     }
 
 
