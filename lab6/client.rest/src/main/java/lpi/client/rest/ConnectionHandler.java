@@ -25,6 +25,8 @@ public class ConnectionHandler implements Closeable {
     private boolean exit = false;
     private boolean isLoggedIn = false;
 
+    private String username;
+
     public ConnectionHandler(Client client, String targetURL) {
         this.client = client;
         this.targetURL = targetURL;
@@ -89,10 +91,14 @@ public class ConnectionHandler implements Closeable {
                     if (loggedIn())
                         list();
                     break;
-//                case "msg":
-//                    if (loggedIn())
-//                        msg(command);
-//                    break;
+                case "msg":
+                    if (loggedIn())
+                        msg(command);
+                    break;
+                case "receive_msg":
+                    if (loggedIn())
+                        receiveMsg();
+                    break;
 //                case "file":
 //                    if (loggedIn())
 //                        file(command);
@@ -181,6 +187,7 @@ public class ConnectionHandler implements Closeable {
         // register authentication feature, that will authenticate all further requests
         this.client.register(HttpAuthenticationFeature
                 .basic(userInfo.login, userInfo.password));
+        this.username = userInfo.login;
         isLoggedIn = true;
     }
 
@@ -190,6 +197,10 @@ public class ConnectionHandler implements Closeable {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get();
 
+        if (response.getStatus() != Status.OK.getStatusCode()) {
+            System.out.println("Error\n");
+            return;
+        }
 
         String jsonResponse = client.target(targetURL + "/users")
                 .request(MediaType.APPLICATION_JSON_TYPE)
@@ -212,6 +223,92 @@ public class ConnectionHandler implements Closeable {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+    }
+
+
+    private void msg(String[] command) {
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!\n");
+            return;
+        }
+        if (command.length < 3) {
+            System.out.println("You need to enter a message!\n");
+            return;
+        }
+
+        String[] messageContent = Arrays.copyOfRange(command, 2, command.length);
+
+        Response response =
+                client.target(targetURL + "/" + command[1] + "/messages")
+                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .post(Entity.text(String.join(" ", messageContent)));
+
+        System.out.println("Debug: " + response.getStatus());
+        if (response.getStatus() == Status.CREATED.getStatusCode()) {
+            System.out.println("The message is processed\n");
+        }
+    }
+
+
+    private void receiveMsg() {
+        Response response = client.target(targetURL + "/" + this.username + "/messages")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get();
+
+        if (response.getStatus() != Status.OK.getStatusCode()) {
+            System.out.println(response.getStatus());
+            System.out.println("Error\n");
+            return;
+        }
+
+        String jsonResponse = client.target(targetURL + "/" + this.username + "/messages")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get(String.class);
+
+        try {
+            JSONObject jsonObject = new JSONObject(jsonResponse);
+            JSONArray messageIds = (JSONArray) jsonObject.get("items");
+
+            System.out.println("Number of messages on the server: " + messageIds.length() + ".");
+
+            if (messageIds.length() > 0){
+                System.out.println("Messages:");
+
+                for (int i = 0; i < messageIds.length(); i++) {
+                    receiveMessage(this.username, messageIds.get(i));
+                    deleteMessage(this.username, messageIds.get(i));
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void receiveMessage(String username, Object messageId) {
+        String jsonString =
+                client.target(targetURL + "/" + username + "/messages/" + messageId)
+                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .get(String.class);
+
+        try {
+            JSONObject jsonObjectMessage = new JSONObject(jsonString);
+
+            System.out.println("Sender: " + jsonObjectMessage.get("sender"));
+            System.out.println("Message: " + jsonObjectMessage.get("message"));
+            System.out.println();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private void deleteMessage(String username, Object messageId) {
+        Response responseOfDelete =
+                client.target(targetURL + "/" + username + "/messages/" + messageId)
+                        .request().delete();
+
+        System.out.println("Code of DELETE: " + responseOfDelete.getStatus() + "\n");
     }
 
 
