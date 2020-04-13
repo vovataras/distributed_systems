@@ -18,10 +18,10 @@ public class Monitoring extends TimerTask {
     private ArrayList<String> currUsers = new ArrayList<>();
     private ArrayList<String> oldUsers = new ArrayList<>();
 
-    private Client client;  // jersey REST client
-    private boolean isLoggedIn;
-    private final String targetURL;
-    private String username;
+    private Client client;          // jersey REST client
+    private boolean isLoggedIn;     // to see if the user is logged in
+    private final String targetURL; // url of server resources
+    private String username;        // the login of the user logged from this client
 
     Monitoring(Client client, String targetURL, String username) {
         this.targetURL = targetURL;
@@ -50,13 +50,16 @@ public class Monitoring extends TimerTask {
 
 
     private void receiveMessages() {
+        // get the message IDs
         Response response = client.target(targetURL + "/" + this.username + "/messages")
                 .request(MediaType.APPLICATION_JSON_TYPE).get(Response.class);
 
+        // check if there is any message IDs
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             return;
         }
 
+        // get json from response
         String jsonResponse = response.readEntity(String.class);
 
         try {
@@ -65,6 +68,7 @@ public class Monitoring extends TimerTask {
             try {
                 messageIds = (JSONArray) jsonObject.get("items");
             } catch (ClassCastException e) {
+                // if there is one item
                 messageIds.put(jsonObject.get("items"));
             }
 
@@ -110,22 +114,25 @@ public class Monitoring extends TimerTask {
 
 
     private void receiveFiles() {
+        // get the file IDs
         Response response = client.target(targetURL + "/" + this.username + "/files")
                 .request(MediaType.APPLICATION_JSON_TYPE).get();
 
+        // check if there is any file IDs
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             return;
         }
 
+        // get json from response
         String jsonResponse = response.readEntity(String.class);
 
         try {
             JSONObject jsonObject = new JSONObject(jsonResponse);
-
             JSONArray fileIds = new JSONArray();
             try {
                 fileIds = (JSONArray) jsonObject.get("items");
             } catch (ClassCastException e) {
+                // if there is one item
                 fileIds.put(jsonObject.get("items"));
             }
 
@@ -150,6 +157,7 @@ public class Monitoring extends TimerTask {
     private void receiveFile(String username, Object fileId) {
         String folderPath = "./receivedFiles";
 
+        // get file with certain fileId
         String jsonString =
                 client.target(targetURL + "/" + username + "/files/" + fileId)
                         .request(MediaType.APPLICATION_JSON_TYPE)
@@ -161,10 +169,10 @@ public class Monitoring extends TimerTask {
             System.out.println("Sender: " + jsonObjectFile.get("sender"));
             System.out.println("Filename: " + jsonObjectFile.get("filename"));
 
+            // recode the content into an byte array
             String encodedFileContent = (String) jsonObjectFile.get("content");
             java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
             byte[] decodedContent = decoder.decode(encodedFileContent);
-
 
             // check if there is a folder to save the files
             File folder = new File(folderPath);
@@ -194,16 +202,17 @@ public class Monitoring extends TimerTask {
 
 
 
-
     private void checkUsers() {
+        // get client logins from the server
         Response response = client.target(targetURL + "/users")
                 .request(MediaType.APPLICATION_JSON_TYPE).get(Response.class);
 
+        // check for any logins
         if (response.getStatus() != Response.Status.OK.getStatusCode()) {
             return;
         }
 
-        String jsonResponse = response.readEntity(String.class);
+        String jsonResponse = response.readEntity(String.class); // get json from response
         ArrayList <String> usersOnServer = new ArrayList<>();
 
         try {
@@ -212,6 +221,7 @@ public class Monitoring extends TimerTask {
             try {
                 jsonArray = (JSONArray) jsonObject.get("items");
             } catch (ClassCastException e) {
+                // if there is one item
                 jsonArray.put(jsonObject.get("items"));
             }
 

@@ -17,14 +17,14 @@ import java.util.Timer;
 
 public class ConnectionHandler implements Closeable {
 
-    private Client client;  // jersey REST client
+    private Client client;              // jersey REST client
     private BufferedReader reader;
-    private final String targetURL;
+    private final String targetURL;     // url of server resources
 
     private boolean exit = false;
-    private boolean isLoggedIn = false;
+    private boolean isLoggedIn = false; // to see if the user is logged in
 
-    private String username;
+    private String username;            // the login of the user logged from this client
     private Timer timer;
 
     public ConnectionHandler(Client client, String targetURL) {
@@ -168,6 +168,7 @@ public class ConnectionHandler implements Closeable {
         Response response = client.target(targetURL + "/user")
                 .request().put(userInfoEntity);
 
+        // check response status code
         if (response.getStatus() == Status.CREATED.getStatusCode())
             System.out.println("New user registered\n");
         else if (response.getStatus() == Status.ACCEPTED.getStatusCode())
@@ -178,8 +179,8 @@ public class ConnectionHandler implements Closeable {
         } else if (response.getStatus() == Status.UNAUTHORIZED.getStatusCode()) {
             System.out.println("Provided login/password pair is invalid\n");
             return;
-        } else if (response.getStatus() == Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
-            System.out.println("Internal server error\n");
+        } else {
+            checkError(response.getStatus());
             return;
         }
 
@@ -188,7 +189,6 @@ public class ConnectionHandler implements Closeable {
                 .basic(userInfo.login, userInfo.password));
         this.username = userInfo.login;
         isLoggedIn = true;
-
 
         // create a monitoring object to check active users and receive new messages and files
         Monitoring monitoring = new Monitoring(this.client, this.targetURL, this.username);
@@ -205,7 +205,7 @@ public class ConnectionHandler implements Closeable {
                 .get(Response.class);
 
         if (response.getStatus() != Status.OK.getStatusCode()) {
-            System.out.println("Error\n");
+            checkError(response.getStatus());
             return;
         }
 
@@ -254,9 +254,10 @@ public class ConnectionHandler implements Closeable {
                         .request(MediaType.APPLICATION_JSON_TYPE)
                         .post(Entity.text(String.join(" ", messageContent)));
 
-//        System.out.println("Debug: " + response.getStatus());
         if (response.getStatus() == Status.CREATED.getStatusCode()) {
             System.out.println("The message is processed\n");
+        } else {
+            checkError(response.getStatus());
         }
     }
 
@@ -294,11 +295,30 @@ public class ConnectionHandler implements Closeable {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .post(fileInfoEntity);
 
-//        System.out.println("Debug: " + response.getStatus() + "\n");
         if (response.getStatus() == Status.CREATED.getStatusCode()) {
             System.out.println("The file is processed\n");
+        } else {
+            checkError(response.getStatus());
         }
+    }
 
+
+
+    private void checkError(int statusCode) {
+        if (statusCode == Status.BAD_REQUEST.getStatusCode()) {
+            // 400
+            System.out.println("The target username "
+                    + "was not specified properly or are incorrect\n");
+        } else if (statusCode == Status.UNAUTHORIZED.getStatusCode()) {
+            // 401
+            System.out.println("Authentication is not correct\n");
+        } else if (statusCode == Status.NOT_ACCEPTABLE.getStatusCode()) {
+            // 406
+            System.out.println("Target user has too much pending messages/files\n");
+        } else if (statusCode == Status.INTERNAL_SERVER_ERROR.getStatusCode()) {
+            // 500
+            System.out.println("Internal server error\n");
+        }
     }
 
 
