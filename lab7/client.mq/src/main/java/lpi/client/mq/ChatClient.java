@@ -40,7 +40,11 @@ public class ChatClient implements Closeable {
             connection.start();
 
             session = connection.createSession(isTransact, ackMode);
+
+            ConnectionHandler connectionHandler = new ConnectionHandler(session);
+            connectionHandler.run();
         } catch (JMSException e) {
+//            System.out.println(e.getMessage() + "\n");
             e.printStackTrace();
         }
     }
