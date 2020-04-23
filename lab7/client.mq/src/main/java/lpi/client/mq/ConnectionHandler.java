@@ -12,7 +12,6 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import javax.jms.MapMessage;
 import javax.jms.ObjectMessage;
-//import javax.xml.soap.Text;
 
 
 public class ConnectionHandler implements Closeable {
@@ -32,6 +31,12 @@ public class ConnectionHandler implements Closeable {
 
 
     public void close() throws IOException {
+        try {
+            exit();
+        } catch (JMSException e) {
+            e.printStackTrace();
+        }
+
         session = null;
 
         if (reader != null) {
@@ -99,7 +104,6 @@ public class ConnectionHandler implements Closeable {
 //                        file(command);
 //                    break;
                 case "exit":
-                    exit();
                     close();
                     return;
                 case "help":
@@ -133,7 +137,7 @@ public class ConnectionHandler implements Closeable {
     private void ping() throws JMSException {
         Message msg = session.createMessage(); // an empty message
 
-        Message response = getResponse(msg,"chat.diag.ping");
+        Message response = getResponse(msg, QueueName.ping);
 
         if (!(response instanceof TextMessage)){
             System.out.println("Ping success!\n");
@@ -150,9 +154,9 @@ public class ConnectionHandler implements Closeable {
 
         TextMessage msg =
                 session.createTextMessage
-                        (String.join(" ", echoMessage)); // a message that contains a string.
+                        (String.join(" ", echoMessage)); // a message that contains a string
 
-        Message response = getResponse(msg, "chat.diag.echo");
+        Message response = getResponse(msg, QueueName.echo);
 
         if (response instanceof TextMessage) {
             // expect the text message as the content
@@ -189,7 +193,7 @@ public class ConnectionHandler implements Closeable {
         msg.setString("login", login);
         msg.setString("password", password);
 
-        Message response = getResponse(msg, "chat.login");
+        Message response = getResponse(msg, QueueName.login);
 
         if (response instanceof MapMessage){
             if (((MapMessage) response).getBoolean("success")) {
@@ -213,8 +217,7 @@ public class ConnectionHandler implements Closeable {
     private void list() throws JMSException {
 
         Message msg = session.createMessage();
-
-        Message response = getResponse(msg, "chat.listUsers");
+        Message response = getResponse(msg, QueueName.list);
 
         if (response instanceof ObjectMessage) {
             // receive “response” and ensure it is indeed ObjectMessage
@@ -245,16 +248,19 @@ public class ConnectionHandler implements Closeable {
     private void exit() throws JMSException {
         this.exit = true;
 
-        Message msg = session.createMessage(); // an empty message
+        if (isLoggedIn) {
+            Message msg = session.createMessage(); // an empty message
+            Message response = getResponse(msg, QueueName.exit);
 
-        Message response = getResponse(msg, "chat.exit");
-
-        if (!(response instanceof TextMessage)){
-            System.out.println("Bye!\n");
-        } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Some error\n");
+            if (!(response instanceof TextMessage)) {
+                System.out.println("Successful logout.");
+            } else {
+                // TODO: create method for errors (for TextMessage)
+                System.out.println("Some error");
+            }
         }
+
+        System.out.println("Bye!\n");
     }
 
 
