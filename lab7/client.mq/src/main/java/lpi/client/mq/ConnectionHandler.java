@@ -9,6 +9,7 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import javax.jms.MapMessage;
 import javax.jms.ObjectMessage;
+import lpi.server.mq.FileInfo;
 
 
 public class ConnectionHandler implements Closeable {

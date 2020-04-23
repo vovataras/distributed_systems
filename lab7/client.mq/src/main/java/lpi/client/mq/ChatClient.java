@@ -2,6 +2,7 @@ package lpi.client.mq;
 
 import javax.jms.JMSException;
 import java.io.Closeable;
+import java.util.Arrays;
 import javax.jms.Connection;
 import javax.jms.Session;
 
@@ -34,6 +35,8 @@ public class ChatClient implements Closeable {
 
         org.apache.activemq.ActiveMQConnectionFactory connectionFactory =
                 new org.apache.activemq.ActiveMQConnectionFactory(brokerUrl);
+
+        connectionFactory.setTrustedPackages(Arrays.asList("lpi.server.mq"));
 
         try {
             connection = connectionFactory.createConnection();

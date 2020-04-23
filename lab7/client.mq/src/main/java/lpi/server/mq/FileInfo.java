@@ -1,4 +1,4 @@
-package lpi.client.mq;
+package lpi.server.mq;
 
 import java.io.File;
 import java.io.FileNotFoundException;
