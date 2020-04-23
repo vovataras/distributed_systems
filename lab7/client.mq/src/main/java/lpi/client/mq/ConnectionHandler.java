@@ -18,7 +18,6 @@ import javax.jms.ObjectMessage;
 public class ConnectionHandler implements Closeable {
 
     private Session session;
-
     private BufferedReader reader;
 
     private boolean exit = false;
@@ -48,7 +47,7 @@ public class ConnectionHandler implements Closeable {
         try{
             while(!exit) {
                 String[] userCommand = getUserCommand();
-                getResponse(userCommand);
+                callCommand(userCommand);
             }
         } catch (IOException e) {
             e.getStackTrace();
@@ -75,7 +74,7 @@ public class ConnectionHandler implements Closeable {
     }
 
 
-    private void getResponse(String[] command) {
+    private void callCommand(String[] command) {
         try {
             switch ( command[0] ) {
                 case "ping":
@@ -111,12 +110,10 @@ public class ConnectionHandler implements Closeable {
                     System.out.println("Not found this command...\n");
                     break;
             }
-        } catch (JMSException e) {
-//            e.printStackTrace();
-            System.out.println(e.getMessage() + "\n");
-        } catch (Exception e) {
+        } catch (JMSException | IOException e) {
             e.printStackTrace();
-//            System.out.println(e.getMessage() + "\n");
+            System.out.println();
+            System.out.println(e.getMessage() + "\n");
         }
     }
 
@@ -134,32 +131,48 @@ public class ConnectionHandler implements Closeable {
 
 
     private void ping() throws JMSException {
-        Message msg = session.createMessage(); // an empty message.
+        Message msg = session.createMessage(); // an empty message
 
-        if (sendMessage(msg,"chat.diag.ping", "ping"))
+        Message response = getResponse(msg,"chat.diag.ping");
+
+        if (!(response instanceof TextMessage)){
             System.out.println("Ping success!\n");
-//        else {
-//            // TODO:
-//            System.out.println("Ping error!\n");
-//        }
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Ping error!\n");
+        }
     }
 
 
 
-    private void echo(String[] command) throws JMSException {
+    private void echo(String[] command) throws JMSException, IOException {
         String[] echoMessage = Arrays.copyOfRange(command, 1, command.length);
 
         TextMessage msg =
                 session.createTextMessage
                         (String.join(" ", echoMessage)); // a message that contains a string.
 
-        if (!(sendMessage(msg, "chat.diag.echo", "echo")))
+        Message response = getResponse(msg, "chat.diag.echo");
+
+        if (response instanceof TextMessage) {
+            // expect the text message as the content
+            String content = msg.getText(); // obtaining content.
+            System.out.println(content + "\n");
+        } else {
+            // oops, the message is not TextMessage.
             System.out.println("Unexpected error!\n");
+            throw new IOException("Unexpected message type: " + response.getClass());
+        }
     }
 
 
 
     private void login(String[] command) throws JMSException {
+        if (isLoggedIn){
+            System.out.println("You must log out first!\n");
+            return;
+        }
+
         if (command.length < 3) {
             System.out.println("You need to enter your login and password!\n");
             return;
@@ -170,83 +183,61 @@ public class ConnectionHandler implements Closeable {
 
         MapMessage msg = session.createMapMessage();
 
-
         String login = command[1];
         String password = command[2];
 
         msg.setString("login", login);
         msg.setString("password", password);
 
+        Message response = getResponse(msg, "chat.login");
 
-//        sendMessage(msg, "chat.login", "login");
-        if (sendMessage(msg, "chat.login", "login"))
-            isLoggedIn = true;
-//            System.out.println("Login success!\n");
+        if (response instanceof MapMessage){
+            if (((MapMessage) response).getBoolean("success")) {
+                // when user logged in successfully
+                isLoggedIn = true;
+                // print success message
+                System.out.println(((MapMessage) response).getString("message") + "\n");
+            } else {
+                // print error
+                isLoggedIn = false;
+                System.out.println("Failed to login: " + ((MapMessage) response).getString("message") + "\n");
+            }
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Unexpected error!\n");
+        }
     }
+
 
 
     private void list() throws JMSException {
 
         Message msg = session.createMessage();
 
-//        if (msg instanceof Message) {
-//            System.out.println("Message");
-//        }
-//        else if (msg instanceof TextMessage) {
-//            System.out.println("TextMessage");
-//        }
-//        else if (msg instanceof MapMessage) {
-//            System.out.println("MapMessage");
-//        }
+        Message response = getResponse(msg, "chat.listUsers");
 
-        sendMessage(msg, "chat.listUsers", "list");
+        if (response instanceof ObjectMessage) {
+            // receive “response” and ensure it is indeed ObjectMessage
+            Serializable obj = ((ObjectMessage)response).getObject();
+            if (obj instanceof String[]) {
+                String[] users = (String[])obj;
 
-
-//        // ... receive “response” and ensure it is indeed ObjectMessage...
-//        Serializable obj = ((ObjectMessage)response).getObject();
-//        if (obj != null && obj instanceof String[]) {
-//            String[] users = (String[])obj;
-//        // ... do what you want to do with active users list ...
-//        } else { // no, there’s not a list of objects, handle error.
-//            thow new IOException(“Unexpected content: ”+ obj);
-//        }
-
-
-
-//        Response response = client.target(targetURL + "/users")
-//                .request(MediaType.APPLICATION_JSON_TYPE)
-//                .get(Response.class);
-//
-//        if (response.getStatus() != Status.OK.getStatusCode()) {
-//            checkError(response.getStatus());
-//            return;
-//        }
-//
-//        String jsonResponse = response.readEntity(String.class);
-//
-//        try {
-//            JSONObject jsonObject = new JSONObject(jsonResponse);
-//
-//            JSONArray users = new JSONArray();
-//            try {
-//                users = (JSONArray) jsonObject.get("items");
-//            } catch (ClassCastException e) {
-//                users.put(jsonObject.get("items"));
-//            }
-//
-//            System.out.println("Number of users on the server: " + users.length() + ".");
-//
-//            if (users.length() > 0){
-//                System.out.println("Users:");
-//
-//                for (int i = 0; i < users.length(); i++) {
-//                    System.out.println(i+1 + ": " + users.get(i));
-//                }
-//                System.out.println();
-//            }
-//        } catch (JSONException e) {
-//            e.printStackTrace();
-//        }
+                System.out.println("Number of users on the server: " + users.length + ".");
+                if (users.length > 0){
+                    System.out.println("Users:");
+                    for (int i = 0; i < users.length; i++) {
+                        System.out.println(i+1 + ": " + users[i]);
+                    }
+                    System.out.println();
+                }
+            }
+        } else if (response instanceof MapMessage) {
+            // print processing error
+            System.out.println(((MapMessage) response).getString("message"));
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Unexpected error!\n");
+        }
     }
 
 
@@ -254,16 +245,21 @@ public class ConnectionHandler implements Closeable {
     private void exit() throws JMSException {
         this.exit = true;
 
-        Message msg = session.createMessage(); // an empty message.
+        Message msg = session.createMessage(); // an empty message
 
-        if (sendMessage(msg, "chat.exit", "exit"))
+        Message response = getResponse(msg, "chat.exit");
+
+        if (!(response instanceof TextMessage)){
             System.out.println("Bye!\n");
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Some error\n");
+        }
     }
 
 
 
-    private boolean sendMessage(Message msg, String queueName, String command) throws JMSException {
-        boolean isSuccess = false;
+    private Message getResponse(Message msg, String queueName) throws JMSException {
 
         // create an object specifying the Destination to which the message will be sent:
         javax.jms.Destination targetQueue = session.createQueue(queueName);
@@ -287,65 +283,6 @@ public class ConnectionHandler implements Closeable {
         Message replyMsg = consumer.receive(2000);
 
 
-        switch (command) {
-            case "ping":
-            case "exit":
-                if(!(replyMsg instanceof TextMessage)) {
-                    isSuccess = true;
-                }
-                break;
-            case "echo":
-                if(replyMsg instanceof TextMessage) {
-                    isSuccess = true;
-
-                    // expect the text message as the content
-                    String content = ((TextMessage) msg).getText(); // obtaining content.
-                    System.out.println(content + "\n");
-                }
-//                else { // oops, the message is not TextMessage.
-//                    throw new IOException("Unexpected message type: " + msg.getClass());
-//                }
-                break;
-            case "login":
-                if(replyMsg instanceof MapMessage) {
-                    System.out.println("here");
-                    //... send the message as usually and get response to “response” object...
-                    if (((MapMessage) replyMsg).getBoolean("success")) {// we logged in.
-                        // ... do what you need to do when user logged in successfully...
-                        isSuccess = true;
-;                    }
-                    System.out.println(((MapMessage) replyMsg).getString("message") + "\n");
-//                    else { // user failed to login, check the “message” for details.
-//                        throw new IOException(“Failed to login: ”+response.getString(“message”));
-//                    }
-                }
-                break;
-            case "list":
-                if(replyMsg instanceof ObjectMessage) {
-                    // ... receive “response” and ensure it is indeed ObjectMessage...
-                    Serializable obj = ((ObjectMessage)replyMsg).getObject();
-                    if (obj != null && obj instanceof String[]) {
-                        String[] users = (String[])obj;
-
-                        System.out.println("Number of users on the server: " + users.length + ".");
-                        if (users.length > 0){
-                            System.out.println("Users:");
-                            for (int i = 0; i < users.length; i++) {
-                                System.out.println(i+1 + ": " + users[i]);
-                            }
-                            System.out.println();
-                        }
-
-                    // ... do what you want to do with active users list ...
-                    }
-//                    else { // no, there’s not a list of objects, handle error.
-//                        throw new IOException(“Unexpected content: ”+ obj);
-//                    }
-                }
-                break;
-        }
-
-
         // if unexpected input message
 //        if (!isSuccess) {
 //            // expect the text message as the error
@@ -354,11 +291,10 @@ public class ConnectionHandler implements Closeable {
 //        }
 
 
-        // close producer and consumer:
         consumer.close();
         producer.close();
 
-        return isSuccess;
+        return replyMsg;
     }
 
 
@@ -378,6 +314,6 @@ public class ConnectionHandler implements Closeable {
         System.out.println("file  - send a file to a specific user;\n" +
                 " User must be registered on the server!\n" +
                 " Format: file <receiver username> </path/to/file>\n");
-        System.out.println("exit  - close the client.\n");
+        System.out.println("exit  - log out and close the client.\n");
     }
 }
