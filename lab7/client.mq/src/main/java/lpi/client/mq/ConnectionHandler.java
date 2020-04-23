@@ -1,10 +1,7 @@
 package lpi.client.mq;
 
-import java.io.BufferedReader;
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Serializable;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.Arrays;
 import javax.jms.JMSException;
 import javax.jms.Session;
@@ -95,14 +92,14 @@ public class ConnectionHandler implements Closeable {
                     if (loggedIn())
                         list();
                     break;
-//                case "msg":
-//                    if (loggedIn())
-//                        msg(command);
-//                    break;
-//                case "file":
-//                    if (loggedIn())
-//                        file(command);
-//                    break;
+                case "msg":
+                    if (loggedIn())
+                        msg(command);
+                    break;
+                case "file":
+                    if (loggedIn())
+                        file(command);
+                    break;
                 case "exit":
                     close();
                     return;
@@ -160,7 +157,7 @@ public class ConnectionHandler implements Closeable {
 
         if (response instanceof TextMessage) {
             // expect the text message as the content
-            String content = msg.getText(); // obtaining content.
+            String content = ((TextMessage) response).getText(); // obtaining content.
             System.out.println(content + "\n");
         } else {
             // oops, the message is not TextMessage.
@@ -245,6 +242,94 @@ public class ConnectionHandler implements Closeable {
 
 
 
+    private void msg(String[] command) throws JMSException {
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!\n");
+            return;
+        }
+        if (command.length < 3) {
+            System.out.println("You need to enter a message!\n");
+            return;
+        }
+
+        String receiver = command[1];
+        String[] messageContent = Arrays.copyOfRange(command, 2, command.length);
+
+        MapMessage msg = session.createMapMessage();
+        msg.setString("receiver", receiver);
+        msg.setString("message", String.join("", messageContent));
+
+        Message response = getResponse(msg, QueueName.sendMsg);
+
+        if (response instanceof MapMessage){
+            if (((MapMessage) response).getBoolean("success")) {
+                // when the message is successfully sent
+                // print success message
+                System.out.println(((MapMessage) response).getString("message") + "\n");
+            } else {
+                // print error
+                System.out.println(((MapMessage) response).getString("message"));
+                System.out.println("Please retry!\n");
+            }
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Unexpected error!\n");
+        }
+    }
+
+
+
+    private void file(String[] command) throws IOException, JMSException {
+
+        if (command.length < 2) {
+            System.out.println("You need to enter receiver login!\n");
+            return;
+        }
+        else if (command.length < 3) {
+            System.out.println("You need to enter a path to the file!!\n");
+            return;
+        }
+
+        File file = new File(command[2]);
+        if (!file.isFile()) {
+            System.out.println("Incorrect file path or it is not a file.\n");
+            return;
+        }
+
+        ObjectMessage msg = session.createObjectMessage();
+
+        // convert a file to an byte array
+        byte[] fileContent = Files.readAllBytes(file.toPath());
+
+        // form a FileInfo to send
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setReceiver(command[1]);
+        fileInfo.setFilename(file.getName());
+        fileInfo.setFileContent(fileContent);
+
+        msg.setObject(fileInfo);
+
+        Message response = getResponse(msg, QueueName.sendFile);
+
+        if (response instanceof MapMessage){
+            if (((MapMessage) response).getBoolean("success")) {
+                // when the file is successfully sent
+                // print success message
+                System.out.println(((MapMessage) response).getString("message") + "\n");
+            } else {
+                // print error
+                System.out.println(((MapMessage) response).getString("message"));
+                System.out.println("Please retry!\n");
+            }
+        } else {
+            // TODO: create method for errors (for TextMessage)
+            System.out.println("Unexpected error!\n");
+            checkUnexpectedError(response);
+        }
+    }
+
+
+
     private void exit() throws JMSException {
         this.exit = true;
 
@@ -261,6 +346,16 @@ public class ConnectionHandler implements Closeable {
         }
 
         System.out.println("Bye!\n");
+    }
+
+
+
+    private void checkUnexpectedError(Message response) throws JMSException {
+        if (response instanceof TextMessage) {
+            // expect the text message as the content
+            String content = ((TextMessage) response).getText(); // obtaining content.
+            System.out.println(content + "\n");
+        }
     }
 
 
