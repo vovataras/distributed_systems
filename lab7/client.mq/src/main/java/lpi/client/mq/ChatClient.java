@@ -14,6 +14,7 @@ public class ChatClient implements Closeable {
 
     private Connection connection;
     private Session session;
+    private Session sessionListener;
 
     public ChatClient(String[] args) {
         if (args.length == 2) {
@@ -43,8 +44,9 @@ public class ChatClient implements Closeable {
             connection.start();
 
             session = connection.createSession(isTransact, ackMode);
+            sessionListener = connection.createSession(isTransact, ackMode);
 
-            ConnectionHandler connectionHandler = new ConnectionHandler(session);
+            ConnectionHandler connectionHandler = new ConnectionHandler(session, sessionListener);
             connectionHandler.run();
         } catch (JMSException e) {
 //            System.out.println(e.getMessage() + "\n");
@@ -62,6 +64,10 @@ public class ChatClient implements Closeable {
 
             if (session != null) {
                 session.close();
+            }
+
+            if (sessionListener != null) {
+                sessionListener.close();
             }
         } catch (JMSException e) {
             e.printStackTrace();

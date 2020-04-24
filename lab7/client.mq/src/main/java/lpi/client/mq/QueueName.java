@@ -10,5 +10,5 @@ public interface QueueName {
     String sendMsg  = "chat.sendMessage";
     String sendFile = "chat.sendFile";
     String getMsg   = "chat.messages";
-    String getFile  = "chat.chat.files";
+    String getFile  = "chat.files";
 }

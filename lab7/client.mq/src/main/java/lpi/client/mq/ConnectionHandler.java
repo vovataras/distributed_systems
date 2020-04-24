@@ -9,20 +9,25 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import javax.jms.MapMessage;
 import javax.jms.ObjectMessage;
+import javax.jms.Destination;
+import javax.jms.MessageConsumer;
 import lpi.server.mq.FileInfo;
 
 
 public class ConnectionHandler implements Closeable {
 
     private Session session;
+    private Session sessionListener;
     private BufferedReader reader;
+    private MessageConsumer messageConsumer;
 
     private boolean exit = false;
     private boolean isLoggedIn = false; // to see if the user is logged in
 
 
-    public ConnectionHandler(Session session) {
+    public ConnectionHandler(Session session, Session sessionListener) {
         this.session = session;
+        this.sessionListener = sessionListener;
 
         this.reader = new BufferedReader(new InputStreamReader(System.in));
     }
@@ -30,12 +35,16 @@ public class ConnectionHandler implements Closeable {
 
     public void close() throws IOException {
         try {
+            if (messageConsumer != null) {
+                messageConsumer.close();
+            }
             exit();
         } catch (JMSException e) {
             e.printStackTrace();
         }
 
         session = null;
+        sessionListener = null;
 
         if (reader != null) {
             reader.close();
@@ -197,6 +206,7 @@ public class ConnectionHandler implements Closeable {
             if (((MapMessage) response).getBoolean("success")) {
                 // when user logged in successfully
                 isLoggedIn = true;
+                createMessageReceiver();
                 // print success message
                 System.out.println(((MapMessage) response).getString("message") + "\n");
             } else {
@@ -258,7 +268,7 @@ public class ConnectionHandler implements Closeable {
 
         MapMessage msg = session.createMapMessage();
         msg.setString("receiver", receiver);
-        msg.setString("message", String.join("", messageContent));
+        msg.setString("message", String.join(" ", messageContent));
 
         Message response = getResponse(msg, QueueName.sendMsg);
 
@@ -330,6 +340,13 @@ public class ConnectionHandler implements Closeable {
     }
 
 
+    private void createMessageReceiver() throws JMSException {
+        Destination queue = sessionListener.createQueue(QueueName.getMsg);
+        messageConsumer = sessionListener.createConsumer(queue);
+        messageConsumer.setMessageListener(new MessageReceiver());
+    }
+
+
 
     private void exit() throws JMSException {
         this.exit = true;
@@ -382,7 +399,7 @@ public class ConnectionHandler implements Closeable {
         producer.send(msg);
 
         // await the reply using consumer:
-        Message replyMsg = consumer.receive(2000);
+        Message replyMsg = consumer.receive(1500);
 
 
         // if unexpected input message
