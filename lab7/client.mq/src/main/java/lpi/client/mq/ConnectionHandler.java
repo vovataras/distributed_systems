@@ -144,7 +144,7 @@ public class ConnectionHandler implements Closeable {
     private void ping() throws JMSException {
         Message msg = session.createMessage(); // an empty message
 
-        Message response = getResponse(msg, QueueName.ping);
+        Message response = getResponse(msg, QueueName.PING);
 
         if (!(response instanceof TextMessage)){
             System.out.println("Ping success!\n");
@@ -163,7 +163,7 @@ public class ConnectionHandler implements Closeable {
                 session.createTextMessage
                         (String.join(" ", echoMessage)); // a message that contains a string
 
-        Message response = getResponse(msg, QueueName.echo);
+        Message response = getResponse(msg, QueueName.ECHO);
 
         if (response instanceof TextMessage) {
             // expect the text message as the content
@@ -200,7 +200,7 @@ public class ConnectionHandler implements Closeable {
         msg.setString("login", login);
         msg.setString("password", password);
 
-        Message response = getResponse(msg, QueueName.login);
+        Message response = getResponse(msg, QueueName.LOGIN);
 
         if (response instanceof MapMessage){
             if (((MapMessage) response).getBoolean("success")) {
@@ -225,7 +225,7 @@ public class ConnectionHandler implements Closeable {
     private void list() throws JMSException {
 
         Message msg = session.createMessage();
-        Message response = getResponse(msg, QueueName.list);
+        Message response = getResponse(msg, QueueName.LIST);
 
         if (response instanceof ObjectMessage) {
             // receive “response” and ensure it is indeed ObjectMessage
@@ -270,7 +270,7 @@ public class ConnectionHandler implements Closeable {
         msg.setString("receiver", receiver);
         msg.setString("message", String.join(" ", messageContent));
 
-        Message response = getResponse(msg, QueueName.sendMsg);
+        Message response = getResponse(msg, QueueName.SEND_MSG);
 
         if (response instanceof MapMessage){
             if (((MapMessage) response).getBoolean("success")) {
@@ -320,7 +320,7 @@ public class ConnectionHandler implements Closeable {
 
         msg.setObject(fileInfo);
 
-        Message response = getResponse(msg, QueueName.sendFile);
+        Message response = getResponse(msg, QueueName.SEND_FILE);
 
         if (response instanceof MapMessage){
             if (((MapMessage) response).getBoolean("success")) {
@@ -341,7 +341,7 @@ public class ConnectionHandler implements Closeable {
 
 
     private void createMessageReceiver() throws JMSException {
-        Destination queue = sessionListener.createQueue(QueueName.getMsg);
+        Destination queue = sessionListener.createQueue(QueueName.GET_MSG);
         messageConsumer = sessionListener.createConsumer(queue);
         messageConsumer.setMessageListener(new MessageReceiver());
     }
@@ -353,7 +353,7 @@ public class ConnectionHandler implements Closeable {
 
         if (isLoggedIn) {
             Message msg = session.createMessage(); // an empty message
-            Message response = getResponse(msg, QueueName.exit);
+            Message response = getResponse(msg, QueueName.EXIT);
 
             if (!(response instanceof TextMessage)) {
                 System.out.println("Successful logout.");

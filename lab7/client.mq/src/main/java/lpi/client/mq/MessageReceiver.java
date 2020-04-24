@@ -21,7 +21,7 @@ class MessageReceiver implements MessageListener {
                 String sender = mapMsg.getString("sender");
                 String msg = mapMsg.getString("message");
 
-                System.out.println("You have new message!");
+                System.out.println("You have a new message!");
                 System.out.println("From: " + sender + "");
                 System.out.println("Message: " + msg + "\n");
 
