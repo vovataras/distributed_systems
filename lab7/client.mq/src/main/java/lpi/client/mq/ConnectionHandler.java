@@ -2,6 +2,8 @@ package lpi.client.mq;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Arrays;
 import javax.jms.JMSException;
 import javax.jms.Session;
@@ -25,6 +27,8 @@ public class ConnectionHandler implements Closeable {
     private boolean exit = false;
     private boolean isLoggedIn = false; // to see if the user is logged in
 
+    private Instant lastActionTime;     // to track the last user action time (for AFK messages)
+    private String username;            // the login of the user logged from this client
 
     public ConnectionHandler(Session session, Session sessionListener) {
         this.session = session;
@@ -92,6 +96,8 @@ public class ConnectionHandler implements Closeable {
 
     private void callCommand(String[] command) {
         try {
+            lastActionTime = Instant.now();
+
             switch ( command[0] ) {
                 case "ping":
                     ping();
@@ -141,6 +147,60 @@ public class ConnectionHandler implements Closeable {
             System.out.println("You need to login!\n");
             return false;
         }
+    }
+
+
+
+    private void checkAFK() {
+        new Thread(() -> {
+            while (true) {
+                Instant instantNow = Instant.now();
+                Duration timeElapsed = Duration.between(lastActionTime, instantNow);
+
+                if (timeElapsed.toMinutes() >= 5) {
+                    break;
+                }
+            }
+
+            System.out.println("AFK!!!\n");
+
+            try {
+                String[] users = new String[0];
+                Message msgList  = session.createMessage();
+                Message response = getResponse(msgList, QueueName.LIST);
+
+                if (response instanceof ObjectMessage) {
+                    // receive “response” and ensure it is indeed ObjectMessage
+                    Serializable obj = ((ObjectMessage)response).getObject();
+                    if (obj instanceof String[]) {
+                        users = (String[])obj;
+                    }
+                }
+
+
+                for (String user : users) {
+                    if (user.equals(username))
+                        continue;
+
+                    while (true) {
+                        String messageContent = "Sorry, I’m AFK, will answer ASAP";
+
+                        MapMessage msg = session.createMapMessage();
+                        msg.setString("receiver", user);
+                        msg.setString("message", messageContent);
+
+                        response = getResponse(msg, QueueName.SEND_MSG);
+                        if (response instanceof MapMessage) {
+                            // when the message is successfully sent
+                            if (((MapMessage) response).getBoolean("success"))
+                                break;
+                        }
+                    }
+                }
+            } catch (JMSException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
 
@@ -210,8 +270,10 @@ public class ConnectionHandler implements Closeable {
             if (((MapMessage) response).getBoolean("success")) {
                 // when user logged in successfully
                 isLoggedIn = true;
+                username = login;
                 createMessageReceiver();
                 createFileReceiver();
+                checkAFK();
                 // print success message
                 System.out.println(((MapMessage) response).getString("message") + "\n");
             } else {
