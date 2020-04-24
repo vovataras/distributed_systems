@@ -20,6 +20,7 @@ public class ConnectionHandler implements Closeable {
     private Session sessionListener;
     private BufferedReader reader;
     private MessageConsumer messageConsumer;
+    private MessageConsumer fileConsumer;
 
     private boolean exit = false;
     private boolean isLoggedIn = false; // to see if the user is logged in
@@ -35,9 +36,12 @@ public class ConnectionHandler implements Closeable {
 
     public void close() throws IOException {
         try {
-            if (messageConsumer != null) {
+            if (messageConsumer != null)
                 messageConsumer.close();
-            }
+
+            if (fileConsumer != null)
+                fileConsumer.close();
+
             exit();
         } catch (JMSException e) {
             e.printStackTrace();
@@ -207,6 +211,7 @@ public class ConnectionHandler implements Closeable {
                 // when user logged in successfully
                 isLoggedIn = true;
                 createMessageReceiver();
+                createFileReceiver();
                 // print success message
                 System.out.println(((MapMessage) response).getString("message") + "\n");
             } else {
@@ -344,6 +349,14 @@ public class ConnectionHandler implements Closeable {
         Destination queue = sessionListener.createQueue(QueueName.GET_MSG);
         messageConsumer = sessionListener.createConsumer(queue);
         messageConsumer.setMessageListener(new MessageReceiver());
+    }
+
+
+
+    private void createFileReceiver() throws JMSException {
+        Destination queue = sessionListener.createQueue(QueueName.GET_FILE);
+        fileConsumer = sessionListener.createConsumer(queue);
+        fileConsumer.setMessageListener(new FileReceiver());
     }
 
 
