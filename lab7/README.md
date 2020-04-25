@@ -53,4 +53,4 @@ Shutdown the client (no parameters);
 
 ### Bonus task:
 
-Application automatically answers that user is away to an incoming message when the user is not specifying any commands longer than for 5 minutes and a new message arrives.
+Application automatically answers that user is away to an incoming message when the user is not specifying any commands longer than for 5 minutes.
