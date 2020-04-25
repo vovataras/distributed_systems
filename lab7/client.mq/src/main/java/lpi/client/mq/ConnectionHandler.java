@@ -165,10 +165,8 @@ public class ConnectionHandler implements Closeable {
                         break;
                     }
 
-                    if (timeElapsed.toMinutes() > 1) {
-                        Message msg = session.createMessage(); // an empty message
-                        getResponse(msg, QueueName.PING);
-                    }
+                    Message msg = session.createMessage(); // an empty message
+                    getResponse(msg, QueueName.PING);
                 } catch (JMSException | InterruptedException e) {
 //                    e.printStackTrace();
                     System.out.println(e.getMessage() + "\n");
