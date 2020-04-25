@@ -48,7 +48,8 @@ public class ConnectionHandler implements Closeable {
 
             exit();
         } catch (JMSException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println(e.getMessage() + "\n");
         }
 
         session = null;
@@ -70,7 +71,8 @@ public class ConnectionHandler implements Closeable {
                 callCommand(userCommand);
             }
         } catch (IOException e) {
-            e.getStackTrace();
+//            e.getStackTrace();
+            System.out.println(e.getMessage() + "\n");
         }
     }
 
@@ -132,8 +134,7 @@ public class ConnectionHandler implements Closeable {
                     break;
             }
         } catch (JMSException | IOException e) {
-            e.printStackTrace();
-            System.out.println();
+//            e.printStackTrace();
             System.out.println(e.getMessage() + "\n");
         }
     }
@@ -154,11 +155,23 @@ public class ConnectionHandler implements Closeable {
     private void checkAFK() {
         new Thread(() -> {
             while (true) {
-                Instant instantNow = Instant.now();
-                Duration timeElapsed = Duration.between(lastActionTime, instantNow);
+                try {
+                    Thread.sleep(20 *  1000);
 
-                if (timeElapsed.toMinutes() >= 5) {
-                    break;
+                    Instant instantNow = Instant.now();
+                    Duration timeElapsed = Duration.between(lastActionTime, instantNow);
+
+                    if (timeElapsed.toMinutes() >= 5) {
+                        break;
+                    }
+
+                    if (timeElapsed.toMinutes() > 1) {
+                        Message msg = session.createMessage(); // an empty message
+                        getResponse(msg, QueueName.PING);
+                    }
+                } catch (JMSException | InterruptedException e) {
+//                    e.printStackTrace();
+                    System.out.println(e.getMessage() + "\n");
                 }
             }
 
@@ -176,7 +189,6 @@ public class ConnectionHandler implements Closeable {
                         users = (String[])obj;
                     }
                 }
-
 
                 for (String user : users) {
                     if (user.equals(username))
@@ -198,7 +210,8 @@ public class ConnectionHandler implements Closeable {
                     }
                 }
             } catch (JMSException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
+                System.out.println(e.getMessage() + "\n");
             }
         }).start();
     }
@@ -444,7 +457,7 @@ public class ConnectionHandler implements Closeable {
 
 
 
-    private Message getResponse(Message msg, String queueName) throws JMSException {
+     private synchronized Message getResponse(Message msg, String queueName) throws JMSException {
         // create an object specifying the Destination to which the message will be sent:
         javax.jms.Destination targetQueue = session.createQueue(queueName);
 

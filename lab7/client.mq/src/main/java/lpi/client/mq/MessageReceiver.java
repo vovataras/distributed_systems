@@ -26,7 +26,8 @@ class MessageReceiver implements MessageListener {
                 System.out.println("Message: " + msg + "\n");
 
             } catch (JMSException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
+                System.out.println(e.getMessage() + "\n");
             }
         }
     }

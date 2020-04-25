@@ -48,8 +48,8 @@ public class ChatClient implements Closeable {
             ConnectionHandler connectionHandler = new ConnectionHandler(session, sessionListener);
             connectionHandler.run();
         } catch (JMSException e) {
-//            System.out.println(e.getMessage() + "\n");
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println(e.getMessage() + "\n");
         }
     }
 
@@ -68,7 +68,8 @@ public class ChatClient implements Closeable {
                 sessionListener.close();
             }
         } catch (JMSException e) {
-            e.printStackTrace();
+//            e.printStackTrace();
+            System.out.println(e.getMessage() + "\n");
         }
     }
 }

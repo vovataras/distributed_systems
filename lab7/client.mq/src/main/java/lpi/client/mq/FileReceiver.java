@@ -38,7 +38,8 @@ class FileReceiver implements MessageListener {
                 fileInfo.saveFileTo(folder);
 
             } catch (JMSException | IOException e) {
-                e.printStackTrace();
+//                e.printStackTrace();
+                System.out.println(e.getMessage() + "\n");
             }
         }
     }
