@@ -24,7 +24,7 @@ public class ConnectionHandler implements Closeable {
     private MessageConsumer messageConsumer;
     private MessageConsumer fileConsumer;
 
-    private boolean exit = false;
+    private boolean shutdown = false;
     private boolean isLoggedIn = false; // to see if the user is logged in
 
     private Instant lastActionTime;     // to track the last user action time (for AFK messages)
@@ -46,7 +46,7 @@ public class ConnectionHandler implements Closeable {
             if (fileConsumer != null)
                 fileConsumer.close();
 
-            exit();
+            shutdown();
         } catch (JMSException e) {
 //            e.printStackTrace();
             System.out.println(e.getMessage() + "\n");
@@ -66,7 +66,7 @@ public class ConnectionHandler implements Closeable {
         System.out.println("Use the \"help\" command to get help.\n");
 
         try{
-            while(!exit) {
+            while(!shutdown) {
                 String[] userCommand = getUserCommand();
                 callCommand(userCommand);
             }
@@ -167,9 +167,9 @@ public class ConnectionHandler implements Closeable {
 
                     Message msg = session.createMessage(); // an empty message
                     getResponse(msg, QueueName.PING);
-                } catch (JMSException | InterruptedException e) {
+                } catch (Exception e) {
 //                    e.printStackTrace();
-                    System.out.println(e.getMessage() + "\n");
+//                    System.out.println(e.getMessage() + "\n");
                 }
             }
 
@@ -207,9 +207,11 @@ public class ConnectionHandler implements Closeable {
                         }
                     }
                 }
-            } catch (JMSException e) {
+
+                isLoggedIn = false;
+            } catch (Exception e) {
 //                e.printStackTrace();
-                System.out.println(e.getMessage() + "\n");
+//                System.out.println(e.getMessage() + "\n");
             }
         }).start();
     }
@@ -254,8 +256,9 @@ public class ConnectionHandler implements Closeable {
 
     private void login(String[] command) throws JMSException {
         if (isLoggedIn){
-            System.out.println("You must log out first!\n");
-            return;
+            System.out.println("You will be logged out automatically.");
+            exit();
+            System.out.println();
         }
 
         if (command.length < 3) {
@@ -423,9 +426,14 @@ public class ConnectionHandler implements Closeable {
 
 
 
-    private void exit() throws JMSException {
-        this.exit = true;
+    private void shutdown() throws JMSException {
+        this.shutdown = true;
+        exit();
+        System.out.println("Bye!\n");
+    }
 
+
+    private void exit() throws JMSException {
         if (isLoggedIn) {
             Message msg = session.createMessage(); // an empty message
             Message response = getResponse(msg, QueueName.EXIT);
@@ -436,8 +444,6 @@ public class ConnectionHandler implements Closeable {
                 checkUnexpectedError(response);
             }
         }
-
-        System.out.println("Bye!\n");
     }
 
 
@@ -490,6 +496,7 @@ public class ConnectionHandler implements Closeable {
         System.out.println("echo  - display line of text/string that are passed as an argument;\n" +
                 " Format: echo <message>\n");
         System.out.println("login - establish a new session with the server;\n" +
+                " (if you are logged in, you will be logged out automatically)\n" +
                 " Format: login <username> <password>\n");
         System.out.println("list  - list all users on the server;\n");
         System.out.println("msg   - send a message to a specific user;\n" +
