@@ -213,14 +213,13 @@ public class ConnectionHandler implements Closeable {
         if (!(response instanceof TextMessage)){
             System.out.println("Ping success!\n");
         } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Ping error!\n");
+            checkUnexpectedError(response);
         }
     }
 
 
 
-    private void echo(String[] command) throws JMSException, IOException {
+    private void echo(String[] command) throws JMSException {
         String[] echoMessage = Arrays.copyOfRange(command, 1, command.length);
 
         TextMessage msg =
@@ -231,12 +230,12 @@ public class ConnectionHandler implements Closeable {
 
         if (response instanceof TextMessage) {
             // expect the text message as the content
-            String content = ((TextMessage) response).getText(); // obtaining content.
+            String content = ((TextMessage) response).getText(); // obtaining content
             System.out.println(content + "\n");
         } else {
             // oops, the message is not TextMessage.
-            System.out.println("Unexpected error!\n");
-            throw new IOException("Unexpected message type: " + response.getClass());
+            System.out.println("Unexpected error!");
+            System.out.println("Unexpected message type: " + response.getClass() + "\n");
         }
     }
 
@@ -282,15 +281,13 @@ public class ConnectionHandler implements Closeable {
                 System.out.println("Failed to login: " + ((MapMessage) response).getString("message") + "\n");
             }
         } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Unexpected error!\n");
+            checkUnexpectedError(response);
         }
     }
 
 
 
     private void list() throws JMSException {
-
         Message msg = session.createMessage();
         Message response = getResponse(msg, QueueName.LIST);
 
@@ -311,10 +308,9 @@ public class ConnectionHandler implements Closeable {
             }
         } else if (response instanceof MapMessage) {
             // print processing error
-            System.out.println(((MapMessage) response).getString("message"));
+            System.out.println(((MapMessage) response).getString("message") + "\n");
         } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Unexpected error!\n");
+            checkUnexpectedError(response);
         }
     }
 
@@ -340,18 +336,15 @@ public class ConnectionHandler implements Closeable {
         Message response = getResponse(msg, QueueName.SEND_MSG);
 
         if (response instanceof MapMessage){
-            if (((MapMessage) response).getBoolean("success")) {
-                // when the message is successfully sent
-                // print success message
-                System.out.println(((MapMessage) response).getString("message") + "\n");
-            } else {
-                // print error
-                System.out.println(((MapMessage) response).getString("message"));
-                System.out.println("Please retry!\n");
+            // print success message or error
+            System.out.println(((MapMessage) response).getString("message"));
+            if (!((MapMessage) response).getBoolean("success")) {
+                // when error
+                System.out.println("Please retry!");
             }
+            System.out.println();
         } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Unexpected error!\n");
+            checkUnexpectedError(response);
         }
     }
 
@@ -390,18 +383,14 @@ public class ConnectionHandler implements Closeable {
         Message response = getResponse(msg, QueueName.SEND_FILE);
 
         if (response instanceof MapMessage){
-            if (((MapMessage) response).getBoolean("success")) {
-                // when the file is successfully sent
-                // print success message
-                System.out.println(((MapMessage) response).getString("message") + "\n");
-            } else {
-                // print error
-                System.out.println(((MapMessage) response).getString("message"));
-                System.out.println("Please retry!\n");
+            // print success message or error
+            System.out.println(((MapMessage) response).getString("message"));
+            if (!((MapMessage) response).getBoolean("success")) {
+                // when error
+                System.out.println("Please retry!");
             }
+            System.out.println();
         } else {
-            // TODO: create method for errors (for TextMessage)
-            System.out.println("Unexpected error!\n");
             checkUnexpectedError(response);
         }
     }
@@ -433,8 +422,7 @@ public class ConnectionHandler implements Closeable {
             if (!(response instanceof TextMessage)) {
                 System.out.println("Successful logout.");
             } else {
-                // TODO: create method for errors (for TextMessage)
-                System.out.println("Some error");
+                checkUnexpectedError(response);
             }
         }
 
@@ -443,18 +431,20 @@ public class ConnectionHandler implements Closeable {
 
 
 
+    // on unexpected input message
     private void checkUnexpectedError(Message response) throws JMSException {
+        System.out.println("Unexpected error!");
         if (response instanceof TextMessage) {
             // expect the text message as the content
-            String content = ((TextMessage) response).getText(); // obtaining content.
-            System.out.println(content + "\n");
+            String content = ((TextMessage) response).getText(); // obtaining content
+            System.out.println(content);
         }
+        System.out.println();
     }
 
 
 
     private Message getResponse(Message msg, String queueName) throws JMSException {
-
         // create an object specifying the Destination to which the message will be sent:
         javax.jms.Destination targetQueue = session.createQueue(queueName);
 
@@ -476,22 +466,11 @@ public class ConnectionHandler implements Closeable {
         // await the reply using consumer:
         Message replyMsg = consumer.receive(1500);
 
-
-        // if unexpected input message
-//        if (!isSuccess) {
-//            // expect the text message as the error
-//            String content = ((TextMessage)msg).getText(); // obtaining content
-//            System.out.println(content + "\n");
-//        }
-
-
         consumer.close();
         producer.close();
 
         return replyMsg;
     }
-
-
 
 
 

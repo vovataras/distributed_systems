@@ -28,7 +28,6 @@ public class ChatClient implements Closeable {
     }
 
 
-
     public void run() {
         String brokerUrl = "tcp://" + this.hostname + ":" + this.port;
         boolean isTransact = false; // no transactions will be used.
@@ -53,7 +52,6 @@ public class ChatClient implements Closeable {
             e.printStackTrace();
         }
     }
-
 
 
     public void close() {
