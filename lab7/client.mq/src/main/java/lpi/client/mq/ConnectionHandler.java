@@ -153,7 +153,7 @@ public class ConnectionHandler implements Closeable {
 
 
     private void checkAFK() {
-        new Thread(() -> {
+        Thread threadPing = new Thread(() -> {
             while (true) {
                 try {
                     Thread.sleep(20 *  1000);
@@ -213,7 +213,10 @@ public class ConnectionHandler implements Closeable {
 //                e.printStackTrace();
 //                System.out.println(e.getMessage() + "\n");
             }
-        }).start();
+        });
+
+        threadPing.setDaemon(true);
+        threadPing.start();
     }
 
 
